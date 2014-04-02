@@ -1,2 +1,6 @@
 # Ignore the addapted app.coffee
 /app.coffee
+/source/app.coffee
+
+# Npm node_modules
+/node_modules

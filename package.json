@@ -1,0 +1,27 @@
+{
+  "name": "yellowleaf",
+  "version": "0.0.1",
+  "description": "A simple but modular ftp server.",
+  "main": "index.js",
+  "dependencies": {
+    "bluebird": "^1.2.1"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@bitbucket.org:Dralletje/yellowleaf.git"
+  },
+  "keywords": [
+    "FTP",
+    "pure",
+    "javascript",
+    "modular",
+    "expandable",
+    "files"
+  ],
+  "author": "Michiel Dral <m.c.dral@gmail.com>",
+  "license": "ISC"
+}

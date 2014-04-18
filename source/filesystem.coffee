@@ -5,11 +5,26 @@ Promise = require 'bluebird'
 fs = Promise.promisifyAll require 'fs'
 
 Drive = require './drive'
+debug = require('debug')('[Drive]', 'red')
 
-module.exports = class SimpleDrive extends Drive
+module.exports = class SimpleDrive
   constructor: (directory) ->
     @directory = directory
     @cwd = '/'
+
+  path: (files...) ->
+    if not @cwd? then @cwd = '/'
+    if not @directory? then @directory = '/'
+
+    file = path.join '/', files...
+    if not file.startsWith '/'
+      file = path.join @cwd, file
+
+    [
+      path.join @directory, file
+      file
+    ]
+
 
   # Move the CWD
   dir: (moveTo) ->
@@ -17,10 +32,11 @@ module.exports = class SimpleDrive extends Drive
       moveTo = path.join '/', @cwd, moveTo
     @cwd = moveTo
 
-  stat: (path) ->
-    fullpath = @path path
-    fs.statAsync().then (stat) =>
-      stat.name = path
+  stat: (path...) ->
+    [fullpath, relativepath] = @path path...
+
+    fs.statAsync(fullpath).then (stat) =>
+      stat.name = relativepath
       stat.path = fullpath
 
       if stat.isDirectory()
@@ -29,28 +45,35 @@ module.exports = class SimpleDrive extends Drive
         new File this, stat
 
   # Directory commands
-  xxx: (dir) ->
-    dir = @path dir
-    fs.readdirAsync(dir).then (files) ->
-      asyncFiles = files
-      Promise.all files.map (file) =>
-        fs.statAsync @path file
-
-    .then (stats) ->
-      console.log stats
+  create: (path...) ->
+    [fullpath, relativepath] = @path path...
+    fs.createWriteStream fullpath
 
 module.exports.Entity = class Entity
-  constructor: (drive, path, stat) ->
+  constructor: (drive, stat) ->
     @drive = drive
-    @path = path
     @stat = stat
 
-    console.log this
+    {@path, @name} = stat
+
+  rename: (to) ->
+    fs.rename @path, to
 
 module.exports.Directory = class Directory extends Entity
-  list: () ->
-    fs.readdirAsync(@path).then (entities) ->
-      console.log 'entities:', entities
-      entities
+  list: ->
+    fs.readdirAsync(@path).then (entities) =>
+      Promise.all entities.map (entity) =>
+        @entity(entity)
+
+  entity: (path...) ->
+    @drive.stat @name, path...
+
+  remove: ->
+    fs.rmdir @path
 
 module.exports.File = class File extends Entity
+  read: ->
+    fs.createReadStream @path
+
+  remove: ->
+    fs.unlink @path

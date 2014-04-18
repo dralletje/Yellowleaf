@@ -1,18 +1,20 @@
-fs = require 'fs'
+Promise = require 'bluebird'
 
 download = (drive) ->
   ## Upload and download
-  @on 'command.retr', (file) ->
-    path = @getFullPath file
-    fileStream = fs.createReadStream path
-    @dataServer.getConnection (connection) =>
-      fileStream.pipe connection
+  @on 'command.retr', (path) ->
+    Promise.all([
+      drive.stat(path)
+    , @dataServer.getConnection()
+    ]).spread (file, connection) ->
+      file.read().pipe connection
 
-  @on 'command.stor', (file) ->
-    path = @getFullPath file
-    fileStream = fs.createWriteStream path
-    @dataServer.getConnection (connection) =>
-      connection.pipe fileStream
+  @on 'command.stor', (path) ->
+    Promise.all([
+      drive.create(path)
+    , @dataServer.getConnection()
+    ]).spread (file, connection) ->
+      connection.pipe file
 
 # for us to do a require later
 module.exports = download

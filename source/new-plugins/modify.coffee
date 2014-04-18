@@ -6,25 +6,36 @@ modify = (drive) ->
     fs.mkdir @getFullPath(file), () =>
       @write '257 Directory created, at your service.'
 
-  @on 'command.rmd', (file) ->
-    fs.rmdir @getFullPath(file), () =>
+  @on 'command.rmd', (path) ->
+    drive.stat(path).then (file) =>
+      file.remove()
       @write '250 Directory deleted.'
-      #@write '450 Not allowed.'
+    .catch (error) ->
+      console.log error.stack
+      @write '450 Not allowed.'
 
-  @on 'command.dele', (file) ->
-    fs.unlink @getFullPath(file), () =>
+  @on 'command.dele', (path) ->
+    drive.stat(path).then (file) =>
+      file.remove()
       @write '250 Directory deleted.'
-      #@write '450 Not allowed.'
+    .catch (error) ->
+      console.log error.stack
+      @write '450 Not allowed.'
 
   ## Rename commands
-  @on 'command.rnfr', (file) ->
-    @rnfr = @getFullPath file
+  @on 'command.rnfr', (path) ->
+    @rnfr = path
     @write '350 Will memorize it!'
 
-  @on 'command.rnto', (file) ->
-    if not @rnfr? then return @write '500 AND WHERE IS THE RNFR COMMAND?!'
-    fs.rename @rnfr, @getFullPath(file)
-    @write '250 File teleportation done.'
+  @on 'command.rnto', (path) ->
+    if not @rnfr?
+      return @write '500 AND WHERE IS THE RNFR COMMAND?!'
+    drive.stat(@rnfr).then (file) =>
+      file.rename drive.path(path)[0]
+      @write '250 File teleportation done.'
+    .catch (error) =>
+      console.log error.stack
+      @write '450 Oops!'
 
 # for us to do a require later
 module.exports = modify

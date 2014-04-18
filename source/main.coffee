@@ -28,7 +28,10 @@ standardReplies =
   noop: '200 OK.'
   site: '500 Go away'
 
-module.exports = (auth) ->
+module.exports = (auth, port=21) ->
+  console.log port
+
+
   server = new Ftpd () ->
     @mode = "ascii"
     @user = undefined
@@ -80,7 +83,7 @@ module.exports = (auth) ->
       console.log 'OOOPS', e.message
       @write '500 Something went wrong, no idea what though.'
 
-  .listen(23)
+  .listen(port)
   .on 'error', (e) ->
     console.log e.message
     process.exit 0

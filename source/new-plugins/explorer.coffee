@@ -8,13 +8,15 @@ require 'date'
 polyfill.extend Array, 'forEachAsync', (fn) ->
   async.eachAsync this, fn
 
+debug = require('debug')('[Exp]', 'magenta')
+
 explorer = (drive) ->
   @on 'command.cwd', (cwd) ->
     drive.dir cwd
     @write '250 Ok.'
 
   @on 'command.pwd', () ->
-    console.log drive
+    debug drive
     @write "257 \"#{drive.cwd}\""
 
   @on 'command.cdup', () ->
@@ -39,57 +41,47 @@ explorer = (drive) ->
       @dataServer.getConnection()
 
     .then (connection) ->
-      console.log promiseFiles
+      debug promiseFiles
       connection.write promiseFiles.join ""
 
     .then () =>
       @dataServer.sayGoodbye().end()
-      console.log 'Done!'
+      debug 'Done!'
 
     .catch (err) ->
-      console.log err.stack
+      debug err.stack
 
   @on 'command.list', (folder) ->
-    asyncFiles = undefined
-    asyncResults = undefined
-    asyncConnection = undefined
-
-    drive.stat(folder).then (directory) ->
-      directory.list()
-
-    .then (results) ->
-      asyncResults = results
-      console.log 'Connection getting'
+    Promise.all([
+      drive.stat(folder).then (directory) ->
+        directory.list()
+    ,
       @dataServer.getConnection()
+    ])
+    .spread (results, connection) ->
+      Promise.all results.map (entity) ->
+        new Promise (resolve, reject) ->
+          line = if entity.stat.isDirectory() then 'd' else '-'
+          line += 'rwxrwxrwx'
+          line += " 1 ftp ftp "
+          line += entity.stat.size.toString()
+          line += new Date(entity.stat.mtime).format(' M d H:i ')
+          line += do () ->
+            name = entity.stat.name.split('/')
+            name[name.length - 1]
 
-    .then (connection) ->
-      asyncConnection = connection
-      asyncResults.forEachAsync (stat, cb) ->
-        line = if stat.isDirectory() then 'd' else '-'
-        line += 'rwxrwxrwx'
-        line += " 1 ftp ftp "
-        line += stat.size.toString()
-        line += new Date(stat.mtime).format(' M d H:i ')
-        line += stat.name
-
-        connection.writeLn line, cb
+          connection.writeLn line, resolve
     .then () =>
       @dataServer.sayGoodbye().end()
-
     .catch (err) =>
-      console.error 'In "LIST":', err
+      console.error 'In "LIST":', err.stack
 
       if not err.ftpNotified
         @write "550 Can't fly here, this place does not exist"
-    .finally () ->
-      asyncFiles = undefined
-      asyncResults = undefined
-      asyncConnection = undefined
 
-  @on 'command.size', (file) ->
-    file = @getFullPath(@cwd + '/' + file)
-    @fs('stat', file).then (stat) ->
-      @write "213 " + s.size.getTime()
+  @on 'command.size', (path) ->
+    drive.stat(path).then (file) ->
+      @write "213 " + file.stat.size.getTime()
 
 # for us to do a require later
 module.exports = explorer

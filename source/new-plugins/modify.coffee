@@ -20,7 +20,7 @@ modify = (drive) ->
   @on 'command.dele', (path) ->
     drive.stat(path).then (file) =>
       file.remove()
-      @write '250 Directory deleted.'
+      @write '250 File deleted.'
     .catch (error) ->
       console.log error.stack
       @write '450 Not allowed.'

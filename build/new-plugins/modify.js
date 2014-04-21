@@ -31,7 +31,7 @@ modify = function(drive) {
     return drive.stat(path).then((function(_this) {
       return function(file) {
         file.remove();
-        return _this.write('250 Directory deleted.');
+        return _this.write('250 File deleted.');
       };
     })(this))["catch"](function(error) {
       console.log(error.stack);

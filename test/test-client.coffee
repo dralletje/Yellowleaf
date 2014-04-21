@@ -153,20 +153,19 @@ describe 'Folder', ->
     @name = @folder + '/' + randomstring() + '.json'
     @content = randomstring 512
 
-  it 'should make the directory', ->
-    @server.ask("MKD #{@folder}").ftpid().should.become(257)
-
-  it 'should make a file', ->
-    @server.useDataConnection "STOR #{@name}", (dataconnection) =>
-      dataconnection.write @content
+  it 'should make the directory and file', ->
+    @server.ask("MKD #{@folder}").ftpid().should.become(257).then =>
+      @server.useDataConnection "STOR #{@name}", (dataconnection) =>
+        dataconnection.write @content
 
   it 'should give me the contents of the file', ->
     @server.useDataConnection "RETR #{@name}", (dataconnection) ->
       dataconnection.suck()
     .should.become @content
 
-  it 'should delete the file', ->
-    @server.ask("DELE #{@name}").ftpid().should.become 250
+  it 'should delete the file and directory', ->
+    @server.ask("DELE #{@name}").ftpid().should.become(250).then =>
+      @server.ask("RMD #{@folder}").ftpid().should.become(250)
 
 after ->
   debug 'Closing connection..'

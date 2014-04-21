@@ -5,6 +5,7 @@ fs = require('fs');
 
 modify = function(basedir) {
   this.on('command.mkd', function(file) {
+    console.log('Lawl!');
     return fs.mkdir(this.getFullPath(file), (function(_this) {
       return function() {
         return _this.write('257 Directory created, at your service.');

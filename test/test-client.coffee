@@ -147,6 +147,27 @@ describe 'File', ->
   it 'should delete the file', ->
     @server.ask("DELE #{@name2}").ftpid().should.become 250
 
+describe 'Folder', ->
+  it 'should generate a random foldername and subfile', ->
+    @folder = randomstring()
+    @name = @folder + '/' + randomstring() + '.json'
+    @content = randomstring 512
+
+  it 'should make the directory', ->
+    @server.ask("MKD #{@folder}").ftpid().should.become(257)
+
+  it 'should make a file', ->
+    @server.useDataConnection "STOR #{@name}", (dataconnection) =>
+      dataconnection.write @content
+
+  it 'should give me the contents of the file', ->
+    @server.useDataConnection "RETR #{@name}", (dataconnection) ->
+      dataconnection.suck()
+    .should.become @content
+
+  it 'should delete the file', ->
+    @server.ask("DELE #{@name}").ftpid().should.become 250
+
 after ->
   debug 'Closing connection..'
   server.close()

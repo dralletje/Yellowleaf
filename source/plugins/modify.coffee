@@ -3,14 +3,15 @@ fs = require 'fs'
 modify = (basedir) ->
   ## Basic file modification commands
   @on 'command.mkd', (file) ->
+    console.log 'Lawl!'
     fs.mkdir @getFullPath(file), () =>
       @write '257 Directory created, at your service.'
-    
+
   @on 'command.rmd', (file) ->
     fs.rmdir @getFullPath(file), () =>
       @write '250 Directory deleted.'
       #@write '450 Not allowed.'
- 
+
   @on 'command.dele', (file) ->
     fs.unlink @getFullPath(file), () =>
       @write '250 Directory deleted.'

@@ -3,8 +3,11 @@ fs = require 'fs'
 modify = (drive) ->
   ## Basic file modification commands
   @on 'command.mkd', (file) ->
-    fs.mkdir @getFullPath(file), () =>
+    drive.createDir(file).then =>
       @write '257 Directory created, at your service.'
+    .catch (err) =>
+      console.log err.stack
+      @write '450 Shit happens'
 
   @on 'command.rmd', (path) ->
     drive.stat(path).then (file) =>

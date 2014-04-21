@@ -8,7 +8,7 @@ mocha = require('gulp-spawn-mocha')
 paths =
   coffee: './source/**/*.coffee'
   test: './test/test-*.coffee'
-  anytest: './test/**'
+  anytest: './test/*.coffee'
 
 gulp.task "coffee", ->
   gulp.src(paths.coffee)

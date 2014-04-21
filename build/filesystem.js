@@ -67,6 +67,13 @@ module.exports = SimpleDrive = (function() {
     return fs.createWriteStream(fullpath);
   };
 
+  SimpleDrive.prototype.createDir = function() {
+    var fullpath, path, relativepath, _ref;
+    path = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+    _ref = this.path.apply(this, path), fullpath = _ref[0], relativepath = _ref[1];
+    return fs.mkdirAsync(fullpath);
+  };
+
   return SimpleDrive;
 
 })();

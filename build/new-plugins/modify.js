@@ -5,9 +5,14 @@ fs = require('fs');
 
 modify = function(drive) {
   this.on('command.mkd', function(file) {
-    return fs.mkdir(this.getFullPath(file), (function(_this) {
+    return drive.createDir(file).then((function(_this) {
       return function() {
         return _this.write('257 Directory created, at your service.');
+      };
+    })(this))["catch"]((function(_this) {
+      return function(err) {
+        console.log(err.stack);
+        return _this.write('450 Shit happens');
       };
     })(this));
   });

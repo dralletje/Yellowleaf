@@ -44,10 +44,14 @@ module.exports = class SimpleDrive
       else
         new File this, stat
 
-  # Directory commands
   create: (path...) ->
     [fullpath, relativepath] = @path path...
     fs.createWriteStream fullpath
+
+  createDir: (path...) ->
+    [fullpath, relativepath] = @path path...
+    fs.mkdirAsync fullpath
+
 
 module.exports.Entity = class Entity
   constructor: (drive, stat) ->
@@ -55,6 +59,7 @@ module.exports.Entity = class Entity
     @stat = stat
 
     {@path, @name} = stat
+    #@rights =
 
   rename: (to) ->
     fs.rename @path, to

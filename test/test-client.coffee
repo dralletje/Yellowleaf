@@ -150,11 +150,13 @@ describe 'File', ->
 describe 'Folder', ->
   it 'should generate a random foldername and subfile', ->
     @folder = randomstring()
-    @name = @folder + '/' + randomstring() + '.json'
+    @name = randomstring() + '.json'
     @content = randomstring 512
 
   it 'should make the directory and file', ->
     @server.ask("MKD #{@folder}").ftpid().should.become(257).then =>
+      @server.ask("CWD #{@folder}").ftpid().should.become(250)
+    .then =>
       @server.useDataConnection "STOR #{@name}", (dataconnection) =>
         dataconnection.write @content
 
@@ -165,6 +167,8 @@ describe 'Folder', ->
 
   it 'should delete the file and directory', ->
     @server.ask("DELE #{@name}").ftpid().should.become(250).then =>
+      @server.ask("CWD /").ftpid().should.become(250)
+    .then =>
       @server.ask("RMD #{@folder}").ftpid().should.become(250)
 
 after ->

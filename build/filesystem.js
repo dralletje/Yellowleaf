@@ -29,10 +29,11 @@ module.exports = SimpleDrive = (function() {
     if (this.directory == null) {
       this.directory = '/';
     }
-    file = path.join.apply(path, ['/'].concat(__slice.call(files)));
+    file = path.join.apply(path, files);
     if (!file.startsWith('/')) {
       file = path.join(this.cwd, file);
     }
+    file = path.join('/', file);
     return [path.join(this.directory, file), file];
   };
 

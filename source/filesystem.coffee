@@ -16,9 +16,10 @@ module.exports = class SimpleDrive
     if not @cwd? then @cwd = '/'
     if not @directory? then @directory = '/'
 
-    file = path.join '/', files...
+    file = path.join files...
     if not file.startsWith '/'
       file = path.join @cwd, file
+    file = path.join '/', file
 
     [
       path.join @directory, file

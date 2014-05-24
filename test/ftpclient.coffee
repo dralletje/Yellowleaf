@@ -93,22 +93,23 @@ module.exports.DataClient = class DataClient
     @host = host
 
     @then = new Promise (resolve, reject) =>
-      @_raw = net.connect port, host, () ->
+      @_raw = net.connect port, host, =>
         resolve(this)
       .on 'error', reject
 
+    ['end', 'write'].forEach (method) =>
+      @[method] = @_raw[method].bind(@_raw)
+
   suck: ->
-    new Promise (resolve, reject) ->
+    new Promise (resolve, reject) =>
       body = ''
       @_raw.on 'readable', ->
         data = @read()
         if not data?
-          console.log 'End?'
           return
-        @body += data.toString()
+        body += data.toString()
 
       .on 'end', ->
-        console.log 'End!'
         resolve body
 
       .on 'error', reject

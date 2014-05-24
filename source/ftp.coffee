@@ -4,8 +4,6 @@ fs = require 'fs'
 crypto = require 'crypto'
 
 ## Plugins
-Drive = require './filesystem'
-
 p =
   explorer  : require './new-plugins/explorer'
   modify    : require './new-plugins/modify'
@@ -29,9 +27,6 @@ standardReplies =
   site: '500 Go away'
 
 module.exports = (auth, port=21) ->
-  console.log port
-
-
   server = new Ftpd () ->
     @mode = "ascii"
     @user = undefined
@@ -45,13 +40,10 @@ module.exports = (auth, port=21) ->
 
     @on 'command.pass', (args...) ->
       password = args.join ' '
-      console.log "Authenticating '#{@user}'"
-
-      if not folder = auth(@user, password)
+      if not @Drive = auth(@user, password)
         @write '530 The gates shall not open for you!'
         return #@end()
 
-      @Drive = new Drive process.cwd() + '/' + folder
       @write '230 OK.'
       [p.explorer, p.modify, p.download, p.dataSocket, p.unknownCommand].forEach (pl) =>
         pl.call this, @Drive

@@ -10,7 +10,7 @@ paths =
   test: './test/test-*.coffee'
   anytest: './test/*.coffee'
 
-gulp.task "coffee", ->
+gulp.task "coffee", (cb) ->
   gulp.src(paths.coffee)
     .pipe(plumber())
     .pipe(coffee(bare: true))
@@ -19,7 +19,7 @@ gulp.task "coffee", ->
     .on "end", ->
       console.log "Done compiling Coffeescript!"
 
-gulp.task 'test', ->
+gulp.task 'test', ['coffee'], ->
   gulp.src(paths.test, read: false)
     #.pipe(plumber())
     .pipe(mocha())

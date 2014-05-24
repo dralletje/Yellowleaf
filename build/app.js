@@ -1,14 +1,32 @@
 // YellowLeaf FTP by Michiel Dral 
-var main, port, server;
+var Drive, ftp, rest;
 
-main = require('./main');
+ftp = require('./ftp');
 
-port = Math.round(Math.random() * 100000);
+rest = require('./rest');
 
-server = main(function(user, password) {
-  if (user === 'jelle' && password === 'jelle') {
-    return "test/example";
+Drive = require('./filesystem');
+
+module.exports = function(ftpport, webport) {
+  var server;
+  if (ftpport != null) {
+    server = ftp(function(user, password) {
+      if (user === 'jelle' && password === 'jelle') {
+        return new Drive(process.cwd() + "/test/example");
+      }
+    }, ftpport);
+    console.log('FTP listening on', ftpport);
   }
-}, port);
+  if (webport != null) {
+    console.log('Web?!');
+  }
+  return function() {
+    if (server != null) {
+      return server.close();
+    }
+  };
+};
 
-console.log('Listening on', port);
+if (module.parent == null) {
+  module.exports(8021);
+}

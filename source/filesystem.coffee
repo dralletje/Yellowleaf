@@ -4,7 +4,6 @@ path = require 'path'
 Promise = require 'bluebird'
 fs = Promise.promisifyAll require 'fs'
 
-Drive = require './drive'
 debug = require('debug')('[Drive]', 'red')
 
 module.exports = class SimpleDrive
@@ -39,8 +38,9 @@ module.exports = class SimpleDrive
     fs.statAsync(fullpath).then (stat) =>
       stat.name = relativepath
       stat.path = fullpath
+      stat.directory = stat.isDirectory()
 
-      if stat.isDirectory()
+      if stat.directory
         new Directory this, stat
       else
         new File this, stat
@@ -56,6 +56,7 @@ module.exports = class SimpleDrive
 
 module.exports.Entity = class Entity
   constructor: (drive, stat) ->
+    @isDirectory = stat.directory
     @drive = drive
     @stat = stat
 

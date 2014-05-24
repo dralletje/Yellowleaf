@@ -1,5 +1,5 @@
 // YellowLeaf FTP by Michiel Dral 
-var Directory, Drive, Entity, File, Promise, SimpleDrive, debug, fs, path,
+var Directory, Entity, File, Promise, SimpleDrive, debug, fs, path,
   __slice = [].slice,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -9,8 +9,6 @@ path = require('path');
 Promise = require('bluebird');
 
 fs = Promise.promisifyAll(require('fs'));
-
-Drive = require('./drive');
 
 debug = require('debug')('[Drive]', 'red');
 
@@ -52,7 +50,8 @@ module.exports = SimpleDrive = (function() {
       return function(stat) {
         stat.name = relativepath;
         stat.path = fullpath;
-        if (stat.isDirectory()) {
+        stat.directory = stat.isDirectory();
+        if (stat.directory) {
           return new Directory(_this, stat);
         } else {
           return new File(_this, stat);
@@ -81,6 +80,7 @@ module.exports = SimpleDrive = (function() {
 
 module.exports.Entity = Entity = (function() {
   function Entity(drive, stat) {
+    this.isDirectory = stat.directory;
     this.drive = drive;
     this.stat = stat;
     this.path = stat.path, this.name = stat.name;

@@ -13,7 +13,7 @@ polyfill.extend(Array, 'forEachAsync', function(fn) {
   return async.eachAsync(this, fn);
 });
 
-debug = require('debug')('[Exp]', 'magenta');
+debug = function() {};
 
 explorer = function(drive) {
   this.on('command.cwd', function(cwd) {

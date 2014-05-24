@@ -8,7 +8,8 @@ require 'date'
 polyfill.extend Array, 'forEachAsync', (fn) ->
   async.eachAsync this, fn
 
-debug = require('debug')('[Exp]', 'magenta')
+#debug = require('debug')('[Exp]', 'magenta')
+debug = ->
 
 explorer = (drive) ->
   @on 'command.cwd', (cwd) ->

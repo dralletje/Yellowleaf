@@ -3,18 +3,25 @@ should = chai.should()
 expect = chai.expect
 chai.use require 'chai-as-promised'
 
-debug = require('debug')('[TC]', 'yellow')
+#debug = require('debug')('[TC]', 'yellow')
+debug = ->
 
-# Start the ftp server
-main = require '../source/main'
 
-port = Math.round Math.random() * 100000
-server = main (user, password) ->
+# SETUP
+ftp = require '../build/ftp'
+Drive = require '../build/filesystem'
+
+ftpport = Math.round Math.random() * 100000
+server = ftp (user, password) ->
   if user is 'jelle' and password is 'jelle'
-    "test/example"
-, port
+    new Drive process.cwd() + "/test/example/ftp"
+, ftpport
+server.debug(no)
+console.log 'FTP listening on', ftpport
 
-# Get the Client
+
+
+# PREPARATION
 Client = require './ftpclient'
 
 randomstring = (length=12) ->
@@ -36,57 +43,11 @@ Promise::ftpid = () ->
   @then (message) ->
     Number message.split(' ')[0]
 
-# Stream stuff
-Stream = require('stream')
-Stream.Readable::chunk = ->
-  new Promise (resolve, reject) =>
-    data = @read()
-    if data?
-      return resolve data.toString()
 
-    @waitFor('readable').then () =>
-      data = @read()
-      if not data?
-        @chunk()
-      else
-        data.toString()
-    .then resolve
 
-# For now the same as chunk; Needs to get all contents till end later.
-Stream.Readable::suck = Stream.Readable::chunk
-
-Stream.Readable::askdata = (question) ->
-  @ask('PASV').then (message) ->
-    match = message.match /227 [a-zA-Z ]+ \((\d+,\d+,\d+,\d+),(\d+),(\d+)\)/
-    if not match?
-      throw new Error "Couldn't parse PASV response!"
-
-    host = match[1].replace /,/g, '.'
-    port = Number(match[2])*256 + Number(match[3])
-
-    new Promise (resolve, reject) =>
-      @dataserver = net.connect(port, host, resolve)
-      .on('error', reject)
-
-  .then =>
-    @ask(question).ftpid()
-  .then (id) ->
-    if id isnt 150
-      throw new Error "Didn't return a good ID for initializing dataconnection transfer."
-  .then ->
-    @dataserver.suck()
-  .then (content) ->
-    @content = content
-  .then =>
-    @ftpchunk().ftpid()
-  .then (id) ->
-    if id isnt 226
-      throw new Error "Dataconnection not closed properly!"
-    @content
-
+# THE TESTS
 before ->
-  @server = new Client(port)
-
+  @server = new Client(ftpport)
 
 describe 'login', ->
   it 'should connect fine', ->
@@ -164,6 +125,16 @@ describe 'Folder', ->
     @server.useDataConnection "RETR #{@name}", (dataconnection) ->
       dataconnection.suck()
     .should.become @content
+
+  it 'should list this directory correctly', ->
+    @server.useDataConnection 'LIST', (dataconnection) =>
+      dataconnection.suck()
+    .then (message) ->
+      message.split("\r\n").slice(0,-1).map (line) ->
+        line.match /[\-drwx]{10} \d \w+ \w+ \d+ \w+ \d+ \d+:\d+ ([a-zA-Z.\-]+)/
+    .should.eventually.not.contain(null)
+    .should.eventually.have.length(1)
+
 
   it 'should delete the file and directory', ->
     @server.ask("DELE #{@name}").ftpid().should.become(250).then =>

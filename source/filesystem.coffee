@@ -16,7 +16,7 @@ module.exports = class SimpleDrive
     if not @directory? then @directory = '/'
 
     file = path.join files...
-    if not file.startsWith '/'
+    if file.indexOf '/' isnt 0
       file = path.join @cwd, file
     file = path.join '/', file
 
@@ -45,6 +45,7 @@ module.exports = class SimpleDrive
       else
         new File this, stat
 
+
   create: (path...) ->
     [fullpath, relativepath] = @path path...
     fs.createWriteStream fullpath
@@ -64,7 +65,9 @@ module.exports.Entity = class Entity
     #@rights =
 
   rename: (to) ->
-    fs.rename @path, to
+    [fullpath, relativepath] = @drive.path to
+    fs.renameAsync(@path, fullpath).then =>
+      @drive.stat to
 
 module.exports.Directory = class Directory extends Entity
   list: ->
@@ -76,11 +79,11 @@ module.exports.Directory = class Directory extends Entity
     @drive.stat @name, path...
 
   remove: ->
-    fs.rmdir @path
+    fs.rmdirAsync @path
 
 module.exports.File = class File extends Entity
   read: ->
     fs.createReadStream @path
 
   remove: ->
-    fs.unlink @path
+    fs.unlinkAsync @path

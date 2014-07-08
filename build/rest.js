@@ -1,7 +1,7 @@
 // YellowLeaf FTP by Michiel Dral 
 
 /*
-Rest server part, too edit the database :)
+Rest server part!
  */
 var Promise, Readable, http, something;
 
@@ -41,13 +41,26 @@ module.exports = function(opts) {
       url = url.slice('/v1'.length);
       path = url;
       return drive.stat(path);
+    })["catch"](function(e) {
+      console.log('Yeah, got here!');
+      if (method !== 'PUT') {
+        throw e;
+      }
+      return req.pipe(drive.create(url));
     }).then(function(entity) {
       var methods, moreMethods;
+      if (method === 'PUT') {
+        res.statusCode = 201;
+        return {
+          path: url
+        };
+      }
       methods = {
         DELETE: function() {
           res.statusCode = 204;
           return entity.remove();
-        }
+        },
+        POST: function() {}
       };
       if (entity.isDirectory) {
         moreMethods = {
@@ -63,7 +76,7 @@ module.exports = function(opts) {
       } else {
         moreMethods = {
           GET: function() {
-            return 'Hello';
+            return entity.read();
           }
         };
       }
@@ -85,6 +98,7 @@ module.exports = function(opts) {
         return res.end(body);
       }
     })["catch"](function(err) {
+      console.log(err);
       res.statusCode = 400;
       res.setHeader('content-type', 'application/json');
       return res.end(JSON.stringify({

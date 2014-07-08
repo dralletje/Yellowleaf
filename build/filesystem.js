@@ -28,7 +28,7 @@ module.exports = SimpleDrive = (function() {
       this.directory = '/';
     }
     file = path.join.apply(path, files);
-    if (!file.startsWith('/')) {
+    if (file.indexOf('/' !== 0)) {
       file = path.join(this.cwd, file);
     }
     file = path.join('/', file);
@@ -87,7 +87,13 @@ module.exports.Entity = Entity = (function() {
   }
 
   Entity.prototype.rename = function(to) {
-    return fs.rename(this.path, to);
+    var fullpath, relativepath, _ref;
+    _ref = this.drive.path(to), fullpath = _ref[0], relativepath = _ref[1];
+    return fs.renameAsync(this.path, fullpath).then((function(_this) {
+      return function() {
+        return _this.drive.stat(to);
+      };
+    })(this));
   };
 
   return Entity;
@@ -118,7 +124,7 @@ module.exports.Directory = Directory = (function(_super) {
   };
 
   Directory.prototype.remove = function() {
-    return fs.rmdir(this.path);
+    return fs.rmdirAsync(this.path);
   };
 
   return Directory;
@@ -137,7 +143,7 @@ module.exports.File = File = (function(_super) {
   };
 
   File.prototype.remove = function() {
-    return fs.unlink(this.path);
+    return fs.unlinkAsync(this.path);
   };
 
   return File;

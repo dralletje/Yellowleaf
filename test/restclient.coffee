@@ -8,9 +8,10 @@ module.exports = class RestClient
   constructor: (base) ->
     @base = urlparse base
 
-  request: (method, url) ->
+  request: (method, url, headers) ->
     uri = Object.create @base
     uri.path = path.join uri.pathname, url
+    uri.headers = headers or {}
 
     uri.method = method
 
@@ -53,7 +54,7 @@ module.exports.Request = class Request
       type = response.headers['content-type']
       if type?.match(/^text\/.*$/)?
         response.body = response.body.toString()
-      if type is 'application/json'
+      if type.match(/application\/json/)?
         response.body = JSON.parse response.body
       response
 
@@ -68,6 +69,8 @@ module.exports.Request = class Request
     @request.write data
 
   send: (data) ->
+    if typeof data is 'object'
+      data = JSON.stringify data
     @write data
     this
 

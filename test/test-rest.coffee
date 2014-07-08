@@ -8,7 +8,7 @@ debug = ->
 
 
 # SETUP
-rest = require '../build/rest'
+rest = require '../build/sleep'
 Drive = require '../build/filesystem'
 
 port = Math.round Math.random() * 100000
@@ -35,15 +35,21 @@ statuscode = (code) ->
     .then ->
       response
 
+console.log """
+  The one and only
+  YELLOWLEAF SLEEP
+  Test suite!!!
+"""
 
 # THE TESTS
 before ->
-  @client = new Client 'http://localhost:'+port+'/v1/'
+  @client = new Client 'http://localhost:'+port
 
 describe 'Root', ->
   it 'should list root', ->
     @client.get('/').then(statuscode 200).then (result) ->
       result.body.type.should.be.eq 'directory'
+      result.headers.should.have.property 'x-type', 'directory'
       result.body.files.should.be.instanceof Array
 
 describe 'File', ->
@@ -58,19 +64,21 @@ describe 'File', ->
     .with.property('path', "/#{@name}")
 
   it 'should give me the contents of the file', ->
-    @client.get("/#{@name}").then(statuscode 200)
+    @client.get("/#{@name}").then(statuscode 200).then (res) ->
+      res.body = res.body.toString()
+      res
     .should.eventually.have.property('body', @content)
 
   it 'should rename the file', ->
-    @client.post("/#{@name}").send(JSON.stringify
+    @client.post("/#{@name}", 'Content-Type': 'application/json').send(
       action: 'rename'
       to: '/' + @name2
-    ).then(statuscode, 301)
-    .should.eventually.have.property 'location', '/' + @name2
+    ).then(statuscode 301).then (result) =>
+      result.headers.should.have.property 'location'
+      result.body.should.have.property 'location', '/' + @name2
 
   it 'should delete the file', ->
-    @client.delete("/#{@name2}").then(statuscode 204)
-    should.have.property 'body', 204
+    @client.delete("/#{@name2}").then(statuscode 200)
 
 after ->
   debug 'Closing connection..'

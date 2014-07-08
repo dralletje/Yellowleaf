@@ -8,13 +8,16 @@ debug = ->
 
 
 # SETUP
-rest = require '../build/sleep'
+Sleep = require 'sleeprest'
+yellowleaf = require '../build/sleep'
 Drive = require '../build/filesystem'
 
 port = Math.round Math.random() * 100000
-server = rest
-  port: port
-  drive: new Drive process.cwd() + "/test/example/rest"
+server = new Sleep
+drive = new Drive process.cwd() + "/test/example/rest"
+yellowleaf server, ->
+  drive
+server.listen port
 
 # PREPARATION
 Client = require './restclient'
@@ -82,4 +85,4 @@ describe 'File', ->
 
 after ->
   debug 'Closing connection..'
-  server.close()
+  server.close?()

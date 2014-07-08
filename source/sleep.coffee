@@ -19,7 +19,6 @@ module.exports = (server, fn) ->
 
   server.res(/(.*)/, 'path').use (req) ->
     # Use the callback fn to get the drive
-    console.log 'Try to get the drive.'
     req.drive = fn req
 
   # READ

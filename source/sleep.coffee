@@ -11,21 +11,16 @@ something = (val) ->
   val
 
 
-module.exports = (server) ->
-  {drive} = opts
-  if not drive?
-    throw new Error "Drive is required!"
+module.exports = (server, fn) ->
 
   # Plugin to get the entity
   getEntity = (req) ->
     drive.stat(req.params.path).then (stat) ->
       req.entity = stat
 
-  server = new Sleep
-
   server.res(/(.*)/, 'path').use (req) ->
-    #console.log 'Params:', req.params
-    "Nothing"
+    # Use the callback fn to get the drive
+    req.drive = fn req
 
   # READ
   .get getEntity, (req) ->

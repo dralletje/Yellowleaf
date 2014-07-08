@@ -16,20 +16,15 @@ something = function(val) {
   return val;
 };
 
-module.exports = function(opts) {
-  var drive, getEntity, server;
-  drive = opts.drive;
-  if (drive == null) {
-    throw new Error("Drive is required!");
-  }
+module.exports = function(server, fn) {
+  var getEntity;
   getEntity = function(req) {
-    return drive.stat(req.params.path).then(function(stat) {
+    return req.drive.stat(req.params.path).then(function(stat) {
       return req.entity = stat;
     });
   };
-  server = new Sleep;
-  server.res(/(.*)/, 'path').use(function(req) {
-    return "Nothing";
+  return server.res(/(.*)/, 'path').use(function(req) {
+    return req.drive = fn(req);
   }).get(getEntity, function(req) {
     var entity;
     entity = req.entity;
@@ -48,7 +43,7 @@ module.exports = function(opts) {
     var path;
     path = req.params.path;
     this.status(201);
-    req.pipe(drive.create(path));
+    req.pipe(req.drive.create(path));
     return {
       path: path
     };
@@ -73,5 +68,4 @@ module.exports = function(opts) {
     entity = req.entity;
     return entity.remove();
   });
-  return server.listen(opts.port || 3009);
 };

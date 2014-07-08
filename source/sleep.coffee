@@ -12,10 +12,10 @@ something = (val) ->
 
 
 module.exports = (server, fn) ->
-
+  
   # Plugin to get the entity
   getEntity = (req) ->
-    drive.stat(req.params.path).then (stat) ->
+    req.drive.stat(req.params.path).then (stat) ->
       req.entity = stat
 
   server.res(/(.*)/, 'path').use (req) ->
@@ -40,7 +40,7 @@ module.exports = (server, fn) ->
     {path} = req.params
 
     @status 201
-    req.pipe drive.create path
+    req.pipe req.drive.create path
     path: path
 
 

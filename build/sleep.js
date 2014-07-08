@@ -24,6 +24,7 @@ module.exports = function(server, fn) {
     });
   };
   return server.res(/(.*)/, 'path').use(function(req) {
+    console.log('Try to get the drive.');
     return req.drive = fn(req);
   }).get(getEntity, function(req) {
     var entity;

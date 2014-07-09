@@ -24,7 +24,9 @@ module.exports = function(server, fn) {
     });
   };
   return server.res(/(.*)/, 'path').use(function(req) {
-    return req.drive = fn(req);
+    return Promise["try"](fn, [req]).then(function(result) {
+      return req.drive = result;
+    });
   }).get(getEntity, function(req) {
     var dir, entity;
     entity = req.entity;

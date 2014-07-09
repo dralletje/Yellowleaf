@@ -19,7 +19,8 @@ module.exports = (server, fn) ->
 
   server.res(/(.*)/, 'path').use (req) ->
     # Use the callback fn to get the drive
-    req.drive = fn req
+    Promise.try(fn, [req]).then (result) ->
+      req.drive = result
 
   # READ
   .get getEntity, (req) ->

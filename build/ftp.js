@@ -1,5 +1,5 @@
 // YellowLeaf FTP by Michiel Dral 
-var Ftpd, crypto, fs, p, standardReplies,
+var Ftpd, Promise, crypto, fs, p, standardReplies,
   __slice = [].slice;
 
 Ftpd = require('ftpd');
@@ -7,6 +7,8 @@ Ftpd = require('ftpd');
 fs = require('fs');
 
 crypto = require('crypto');
+
+Promise = require('bluebird');
 
 p = {
   explorer: require('./new-plugins/explorer'),
@@ -45,14 +47,19 @@ module.exports = function(auth, port) {
       var args, password;
       args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
       password = args.join(' ');
-      if (!(this.Drive = auth(this.user, password))) {
-        this.write('530 The gates shall not open for you!');
-        return;
-      }
-      this.write('230 OK.');
-      return [p.explorer, p.modify, p.download, p.dataSocket, p.unknownCommand].forEach((function(_this) {
-        return function(pl) {
-          return pl.call(_this, _this.Drive);
+      return Promise["try"](auth, [this.user, password]).then((function(_this) {
+        return function(drive) {
+          _this.Drive = drive;
+          console.log('Woot');
+          _this.write('230 OK.');
+          return [p.explorer, p.modify, p.download, p.dataSocket, p.unknownCommand].forEach(function(pl) {
+            return pl.call(_this, _this.Drive);
+          });
+        };
+      })(this))["catch"]((function(_this) {
+        return function(e) {
+          console.log('Yeah');
+          _this.write('530 The gates shall not open for you! (' + e.message + ')');
         };
       })(this));
     });

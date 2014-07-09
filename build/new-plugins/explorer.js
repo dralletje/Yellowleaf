@@ -25,7 +25,6 @@ explorer = function(drive) {
     console.log('Lister');
     promiseFiles = void 0;
     connection = void 0;
-    drive.stat(folder).then(function() {});
     return this.fs('readdir', folder).then((function(_this) {
       return function(files) {
         files = files.map(_this.getFullPath).map(function(file) {
@@ -57,14 +56,14 @@ explorer = function(drive) {
       return Promise.all(results.map(function(entity) {
         return new Promise(function(resolve, reject) {
           var line;
-          line = entity.stat.isDirectory() ? 'd' : '-';
+          line = entity.isDirectory ? 'd' : '-';
           line += 'rwxrwxrwx';
           line += " 1 ftp ftp ";
           line += entity.stat.size.toString();
           line += new Date(entity.stat.mtime).format(' M d H:i ');
           line += (function() {
             var name;
-            name = entity.stat.name.split('/');
+            name = entity.name.split('/');
             return name[name.length - 1];
           })();
           return connection.writeLn(line, resolve);

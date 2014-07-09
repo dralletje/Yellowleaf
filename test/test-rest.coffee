@@ -51,7 +51,7 @@ before ->
 describe 'Root', ->
   it 'should list root', ->
     @client.get('/').then(statuscode 200).then (result) ->
-      result.body.type.should.be.eq 'directory'
+      result.body.should.have.property 'isDirectory', true
       result.headers.should.have.property 'x-type', 'directory'
       result.body.files.should.be.instanceof Array
 

@@ -27,6 +27,23 @@ module.exports = (server, fn) ->
     @header 'x-type', if entity.isDirectory then 'directory' else 'file'
 
     if entity.isDirectory
+      dir = entity.info()
+      return entity.list().then (list) =>
+        # Just the files
+        dir.files = list.map (file) ->
+          file.name
+
+        # Add embedded files
+        thisHref = @_links.self.href
+        @embed 'files', list.map (file) =>
+          info = file.info()
+          info._link =
+            self: href: thisHref + '/' + file.name
+            parent: href: thisHref
+          info
+
+        dir
+
       entity.list().then (list) ->
         type: 'directory'
         files: list

@@ -48,13 +48,17 @@ module.exports = SimpleDrive = (function() {
     _ref = this.path.apply(this, path), fullpath = _ref[0], relativepath = _ref[1];
     return fs.statAsync(fullpath).then((function(_this) {
       return function(stat) {
-        stat.name = relativepath;
-        stat.path = fullpath;
+        var paths;
+        paths = {
+          relpath: relativepath,
+          fullpath: fullpath,
+          name: relativepath.match(/\/([^/]*)\/?$/)[1]
+        };
         stat.directory = stat.isDirectory();
         if (stat.directory) {
-          return new Directory(_this, stat);
+          return new Directory(_this, stat, paths);
         } else {
-          return new File(_this, stat);
+          return new File(_this, stat, paths);
         }
       };
     })(this));
@@ -79,17 +83,27 @@ module.exports = SimpleDrive = (function() {
 })();
 
 module.exports.Entity = Entity = (function() {
-  function Entity(drive, stat) {
+  function Entity(drive, stat, paths) {
     this.isDirectory = stat.directory;
     this.drive = drive;
     this.stat = stat;
-    this.path = stat.path, this.name = stat.name;
+    this.paths = paths;
+    this.relpath = paths.relpath, this.fullpath = paths.fullpath, this.name = paths.name;
   }
+
+  Entity.prototype.info = function() {
+    return {
+      isDirectory: this.isDirectory,
+      name: this.name,
+      path: this.relpath,
+      stat: this.stat
+    };
+  };
 
   Entity.prototype.rename = function(to) {
     var fullpath, relativepath, _ref;
     _ref = this.drive.path(to), fullpath = _ref[0], relativepath = _ref[1];
-    return fs.renameAsync(this.path, fullpath).then((function(_this) {
+    return fs.renameAsync(this.fullpath, fullpath).then((function(_this) {
       return function() {
         return _this.drive.stat(to);
       };
@@ -108,7 +122,7 @@ module.exports.Directory = Directory = (function(_super) {
   }
 
   Directory.prototype.list = function() {
-    return fs.readdirAsync(this.path).then((function(_this) {
+    return fs.readdirAsync(this.fullpath).then((function(_this) {
       return function(entities) {
         return Promise.all(entities.map(function(entity) {
           return _this.entity(entity);
@@ -120,11 +134,11 @@ module.exports.Directory = Directory = (function(_super) {
   Directory.prototype.entity = function() {
     var path, _ref;
     path = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
-    return (_ref = this.drive).stat.apply(_ref, [this.name].concat(__slice.call(path)));
+    return (_ref = this.drive).stat.apply(_ref, [this.relpath].concat(__slice.call(path)));
   };
 
   Directory.prototype.remove = function() {
-    return fs.rmdirAsync(this.path);
+    return fs.rmdirAsync(this.fullpath);
   };
 
   return Directory;
@@ -139,11 +153,11 @@ module.exports.File = File = (function(_super) {
   }
 
   File.prototype.read = function() {
-    return fs.createReadStream(this.path);
+    return fs.createReadStream(this.fullpath);
   };
 
   File.prototype.remove = function() {
-    return fs.unlinkAsync(this.path);
+    return fs.unlinkAsync(this.fullpath);
   };
 
   return File;

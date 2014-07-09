@@ -26,10 +26,34 @@ module.exports = function(server, fn) {
   return server.res(/(.*)/, 'path').use(function(req) {
     return req.drive = fn(req);
   }).get(getEntity, function(req) {
-    var entity;
+    var dir, entity;
     entity = req.entity;
     this.header('x-type', entity.isDirectory ? 'directory' : 'file');
     if (entity.isDirectory) {
+      dir = entity.info();
+      return entity.list().then((function(_this) {
+        return function(list) {
+          var thisHref;
+          dir.files = list.map(function(file) {
+            return file.name;
+          });
+          thisHref = _this._links.self.href;
+          _this.embed('files', list.map(function(file) {
+            var info;
+            info = file.info();
+            info._link = {
+              self: {
+                href: thisHref + '/' + file.name
+              },
+              parent: {
+                href: thisHref
+              }
+            };
+            return info;
+          }));
+          return dir;
+        };
+      })(this));
       return entity.list().then(function(list) {
         return {
           type: 'directory',

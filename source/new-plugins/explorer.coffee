@@ -25,8 +25,7 @@ explorer = (drive) ->
     promiseFiles = undefined
     connection = undefined
 
-    drive.stat(folder).then () ->
-
+    #drive.stat(folder).then () ->
 
     @fs('readdir', folder).then (files) =>
       files = files
@@ -59,13 +58,13 @@ explorer = (drive) ->
     .spread (results, connection) ->
       Promise.all results.map (entity) ->
         new Promise (resolve, reject) ->
-          line = if entity.stat.isDirectory() then 'd' else '-'
+          line = if entity.isDirectory then 'd' else '-'
           line += 'rwxrwxrwx'
           line += " 1 ftp ftp "
           line += entity.stat.size.toString()
           line += new Date(entity.stat.mtime).format(' M d H:i ')
           line += do () ->
-            name = entity.stat.name.split('/')
+            name = entity.name.split('/')
             name[name.length - 1]
 
           connection.writeLn line, resolve

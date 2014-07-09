@@ -1,11 +1,8 @@
 // YellowLeaf FTP by Michiel Dral 
-var Ftpd, crypto, fs, p, polyfill, standardReplies,
-  __hasProp = {}.hasOwnProperty,
+var Ftpd, crypto, fs, p, standardReplies,
   __slice = [].slice;
 
 Ftpd = require('ftpd');
-
-polyfill = require("polyfill");
 
 fs = require('fs');
 
@@ -18,24 +15,6 @@ p = {
   dataSocket: Ftpd.defaults.dataSocket,
   unknownCommand: Ftpd.defaults.unknownCommand
 };
-
-polyfill.extend(String, 'startsWith', function(searchString, position) {
-  if (position == null) {
-    position = 0;
-  }
-  return this.indexOf(searchString, position) === position;
-});
-
-polyfill.extend(Object, 'forEach', function(fn, scope) {
-  var key, value, _results;
-  _results = [];
-  for (key in this) {
-    if (!__hasProp.call(this, key)) continue;
-    value = this[key];
-    _results.push(fn.call(scope, value, key, this));
-  }
-  return _results;
-});
 
 standardReplies = {
   feat: '500 Go away',
@@ -51,6 +30,7 @@ module.exports = function(auth, port) {
     port = 21;
   }
   return server = new Ftpd(function() {
+    var key, response;
     this.mode = "ascii";
     this.user = void 0;
 
@@ -96,13 +76,12 @@ module.exports = function(auth, port) {
       this.write('504 Sorry, I don\'t know how to handle this.');
       return console.log('Unknown OPTS:', opt);
     });
-    standardReplies.forEach((function(_this) {
-      return function(value, key) {
-        return _this.on("command." + key, function() {
-          return this.write(value);
-        });
-      };
-    })(this));
+    for (key in standardReplies) {
+      response = standardReplies[key];
+      this.on("command." + key, (function(value) {
+        return this.write(value);
+      }).bind(this, response));
+    }
     return this.on('error', function(e) {
       console.log('OOOPS', e.message);
       return this.write('500 Something went wrong, no idea what though.');

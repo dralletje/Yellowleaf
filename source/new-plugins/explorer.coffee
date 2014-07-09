@@ -1,12 +1,8 @@
-polyfill = require "polyfill"
+#polyfill = require "polyfill"
 
 Promise = require 'bluebird'
-async = Promise.promisifyAll require 'async'
 
 require 'date'
-
-polyfill.extend Array, 'forEachAsync', (fn) ->
-  async.eachAsync this, fn
 
 #debug = require('debug')('[Exp]', 'magenta')
 debug = ->
@@ -25,6 +21,7 @@ explorer = (drive) ->
     @write "200 Lifted"
 
   @on 'command.nlst', (folder) ->
+    console.log 'Lister'
     promiseFiles = undefined
     connection = undefined
 

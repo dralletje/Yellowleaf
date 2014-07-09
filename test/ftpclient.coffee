@@ -14,7 +14,7 @@ EventEmitter::waitFor = (event) ->
     .once 'error', error
 
 class MatchError extends Error
-
+  
 String::exceptionMatch = (regexp) ->
   match = @match regexp
   if not match?

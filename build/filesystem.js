@@ -28,7 +28,7 @@ module.exports = SimpleDrive = (function() {
       this.directory = '/';
     }
     file = path.join.apply(path, files);
-    if (file.indexOf('/' !== 0)) {
+    if (file.indexOf('/') !== 0) {
       file = path.join(this.cwd, file);
     }
     file = path.join('/', file);
@@ -36,7 +36,7 @@ module.exports = SimpleDrive = (function() {
   };
 
   SimpleDrive.prototype.dir = function(moveTo) {
-    if (!moveTo.startsWith('/')) {
+    if (moveTo.indexOf('/') !== 0) {
       moveTo = path.join('/', this.cwd, moveTo);
     }
     return this.cwd = moveTo;

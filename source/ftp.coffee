@@ -1,5 +1,5 @@
 Ftpd = require 'ftpd'
-polyfill = require "polyfill"
+#polyfill = require "polyfill"
 fs = require 'fs'
 crypto = require 'crypto'
 
@@ -12,12 +12,12 @@ p =
   unknownCommand: Ftpd.defaults.unknownCommand
 
 ## Polyfills
-polyfill.extend String, 'startsWith', (searchString, position=0) ->
-  @indexOf(searchString, position) is position
+#polyfill.extend String, 'startsWith', (searchString, position=0) ->
+#  @indexOf(searchString, position) is position
 
-polyfill.extend Object, 'forEach', (fn, scope) ->
-  for own key, value of this
-    fn.call(scope, value, key, this)
+#polyfill.extend Object, 'forEach', (fn, scope) ->
+#  for own key, value of this
+#    fn.call(scope, value, key, this)
 
 standardReplies =
   feat: '500 Go away'
@@ -67,9 +67,10 @@ module.exports = (auth, port=21) ->
         console.log 'Unknown OPTS:', opt
 
     ## Nonsense commands
-    standardReplies.forEach (value, key) =>
-      @on "command.#{key}", () ->
+    for key, response of standardReplies
+      @on "command.#{key}", ((value) ->
         @write value
+      ).bind this, response
 
     @on 'error', (e) ->
       console.log 'OOOPS', e.message

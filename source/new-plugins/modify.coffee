@@ -13,7 +13,7 @@ modify = (drive) ->
     drive.stat(path).then (file) =>
       file.remove()
       @write '250 Directory deleted.'
-    .catch (error) ->
+    .catch (error) =>
       console.log error.stack
       @write '450 Not allowed.'
 
@@ -21,7 +21,7 @@ modify = (drive) ->
     drive.stat(path).then (file) =>
       file.remove()
       @write '250 File deleted.'
-    .catch (error) ->
+    .catch (error) =>
       console.log error.stack
       @write '450 Not allowed.'
 
@@ -34,9 +34,11 @@ modify = (drive) ->
     if not @rnfr?
       return @write '500 AND WHERE IS THE RNFR COMMAND?!'
     drive.stat(@rnfr).then (file) =>
-      file.rename drive.path(path)[0]
+      file.rename path
+    .then =>
       @write '250 File teleportation done.'
     .catch (error) =>
+      console.log 'File teleportation didn\'t work very well.'
       console.log error.stack
       @write '450 Oops!'
 

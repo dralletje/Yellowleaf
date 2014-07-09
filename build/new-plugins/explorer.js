@@ -1,17 +1,9 @@
 // YellowLeaf FTP by Michiel Dral 
-var Promise, async, debug, explorer, polyfill;
-
-polyfill = require("polyfill");
+var Promise, debug, explorer;
 
 Promise = require('bluebird');
 
-async = Promise.promisifyAll(require('async'));
-
 require('date');
-
-polyfill.extend(Array, 'forEachAsync', function(fn) {
-  return async.eachAsync(this, fn);
-});
 
 debug = function() {};
 
@@ -30,6 +22,7 @@ explorer = function(drive) {
   });
   this.on('command.nlst', function(folder) {
     var connection, promiseFiles;
+    console.log('Lister');
     promiseFiles = void 0;
     connection = void 0;
     drive.stat(folder).then(function() {});

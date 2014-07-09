@@ -22,10 +22,12 @@ modify = function(drive) {
         file.remove();
         return _this.write('250 Directory deleted.');
       };
-    })(this))["catch"](function(error) {
-      console.log(error.stack);
-      return this.write('450 Not allowed.');
-    });
+    })(this))["catch"]((function(_this) {
+      return function(error) {
+        console.log(error.stack);
+        return _this.write('450 Not allowed.');
+      };
+    })(this));
   });
   this.on('command.dele', function(path) {
     return drive.stat(path).then((function(_this) {
@@ -33,10 +35,12 @@ modify = function(drive) {
         file.remove();
         return _this.write('250 File deleted.');
       };
-    })(this))["catch"](function(error) {
-      console.log(error.stack);
-      return this.write('450 Not allowed.');
-    });
+    })(this))["catch"]((function(_this) {
+      return function(error) {
+        console.log(error.stack);
+        return _this.write('450 Not allowed.');
+      };
+    })(this));
   });
   this.on('command.rnfr', function(path) {
     this.rnfr = path;
@@ -48,11 +52,15 @@ modify = function(drive) {
     }
     return drive.stat(this.rnfr).then((function(_this) {
       return function(file) {
-        file.rename(drive.path(path)[0]);
+        return file.rename(path);
+      };
+    })(this)).then((function(_this) {
+      return function() {
         return _this.write('250 File teleportation done.');
       };
     })(this))["catch"]((function(_this) {
       return function(error) {
+        console.log('File teleportation didn\'t work very well.');
         console.log(error.stack);
         return _this.write('450 Oops!');
       };

@@ -16,7 +16,7 @@ module.exports = class SimpleDrive
     if not @directory? then @directory = '/'
 
     file = path.join files...
-    if file.indexOf '/' isnt 0
+    if file.indexOf('/') isnt 0
       file = path.join @cwd, file
     file = path.join '/', file
 
@@ -28,7 +28,7 @@ module.exports = class SimpleDrive
 
   # Move the CWD
   dir: (moveTo) ->
-    if not moveTo.startsWith '/'
+    if moveTo.indexOf('/') isnt 0
       moveTo = path.join '/', @cwd, moveTo
     @cwd = moveTo
 

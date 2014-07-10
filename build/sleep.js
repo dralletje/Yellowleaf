@@ -73,12 +73,16 @@ module.exports = function(server, fn) {
     var destination, path, source, sources;
     path = req.params.path;
     if (req.body == null) {
-      this.status(201);
-      req.pipe(req.drive.create(path));
-      return {
-        path: path,
-        note: 'File uploaded perfectly fine :-)'
-      };
+      return req.drive.create(path).then(function(file) {
+        req.pipe(file);
+        return {
+          statusCode: 201,
+          path: path,
+          note: 'File uploaded perfectly fine :-)'
+        };
+      })["catch"](function(err) {
+        throw new Error("HTTP:409 You are trying to put a file on a directory.. good luck XD");
+      });
     }
     sources = {
       http: function(opts, dest) {
@@ -107,15 +111,18 @@ module.exports = function(server, fn) {
     if (sources[source] == null) {
       throw new Error("HTTP:501 Can't handle these kind of sources yet, but I can handle " + (Object.keys(sources).join(', ')) + "!");
     }
-    destination = req.drive.create(path);
-    return sources[source](req.body, destination).then(function(note) {
+    return destination = req.drive.create(path)["catch"](function() {
+      throw new Error("HTTP:409 You know '" + path + "' is a directory? And you are trying to put a file? Yes??");
+    }).then(function(file) {
+      return sources[source](req.body, file)["catch"](function(err) {
+        throw new Error("HTTP:418 Source gave an error, D-: (" + err.message + ")");
+      });
+    }).then(function(note) {
       return {
         statusCode: 201,
         path: path,
         note: note
       };
-    })["catch"](function(err) {
-      throw new Error("HTTP:418 Source gave an error, D-: (" + err.message + ")");
     });
   }).post(getEntity, Sleep.bodyParser(), function(req) {
     var action, entity, to;

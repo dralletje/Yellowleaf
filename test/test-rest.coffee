@@ -38,6 +38,10 @@ statuscode = (code) ->
     .then ->
       response
 
+log = (response) ->
+  console.log response
+  response
+
 console.log """
   The one and only
   YELLOWLEAF SLEEP
@@ -110,6 +114,17 @@ describe 'REST:', ->
     it 'should delete the file', ->
       @client.delete(@path).then(statuscode 200)
 
+
+  describe 'Errors', ->
+    it 'should not write a file to a directory', ->
+      @client.put('/').send(randomstring 512)
+        .then(statuscode 409)
+
+    it 'should not write from a http source to a directory', ->
+      @client.put('/', 'Content-Type': 'application/json').send(
+        source: 'http'
+        url: "http://example.com"
+      ).then(statuscode 409)
 after ->
   debug 'Closing connection..'
   server.close?()

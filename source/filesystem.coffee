@@ -51,7 +51,11 @@ module.exports = class SimpleDrive
 
   create: (path...) ->
     [fullpath, relativepath] = @path path...
-    fs.createWriteStream fullpath
+    new Promise (yell, cry) ->
+      fs.createWriteStream(fullpath)
+        .on 'open', ->
+          yell this
+        .on('error', cry)
 
   createDir: (path...) ->
     [fullpath, relativepath] = @path path...
@@ -61,7 +65,7 @@ module.exports = class SimpleDrive
 module.exports.Entity = class Entity
   constructor: (drive, stat, paths) ->
     @isDirectory = stat.directory
-    
+
     @drive = drive
     @stat = stat
     @paths = paths

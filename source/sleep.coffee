@@ -63,12 +63,13 @@ module.exports = (server, fn) ->
 
     # If it is a 'raw' put, put.
     if not req.body?
-      @status 201
-      req.pipe req.drive.create path
-      return {
+      return req.drive.create(path).then (file) ->
+        req.pipe file
+        statusCode: 201
         path: path
         note: 'File uploaded perfectly fine :-)'
-      }
+      .catch (err) ->
+        throw new Error "HTTP:409 You are trying to put a file on a directory.. good luck XD"
 
     sources =
       http: (opts, dest) ->
@@ -92,14 +93,17 @@ module.exports = (server, fn) ->
     if not sources[source]?
       throw new Error "HTTP:501 Can't handle these kind of sources yet, but I can handle #{Object.keys(sources).join(', ')}!"
 
-    destination = req.drive.create path
-    sources[source](req.body, destination).then (note) ->
+    destination = req.drive.create(path).catch ->
+      throw new Error "HTTP:409 You know '#{path}' is a directory? And you are trying to put a file? Yes??"
+
+    .then (file) ->
+      sources[source](req.body, file).catch (err) ->
+        throw new Error "HTTP:418 Source gave an error, D-: (#{err.message})"
+
+    .then (note) ->
       statusCode: 201
       path: path
       note: note
-
-    .catch (err) ->
-      throw new Error "HTTP:418 Source gave an error, D-: (#{err.message})"
 
 
   # ALTER

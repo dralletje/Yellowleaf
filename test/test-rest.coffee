@@ -83,6 +83,33 @@ describe 'REST:', ->
 
     it 'should delete the file', ->
       @client.delete("/#{@name2}").then(statuscode 200)
+
+  describe 'HTTP PUT', ->
+    before ->
+      http = require 'http'
+      debug 'HTTP PUT start (starting server)'
+
+      # Create a server that 'just sends a string'.
+      @response = randomstring 512
+      @port = Math.round Math.random() * 100000
+      http.createServer (req, res) =>
+        res.end @response
+      .listen @port
+
+    it 'should download file', ->
+      @path = '/' + randomstring() + '.txt'
+      @client.put(@path, 'Content-Type': 'application/json').send(
+        source: 'http'
+        url: "http://localhost:#{@port}/"
+      ).then(statuscode 201)
+
+    it 'should validate the file', ->
+      @client.get(@path).then(statuscode 200)
+        .get('body').call('toString').should.become(@response)
+
+    it 'should delete the file', ->
+      @client.delete(@path).then(statuscode 200)
+
 after ->
   debug 'Closing connection..'
   server.close?()

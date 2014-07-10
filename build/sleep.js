@@ -3,11 +3,13 @@
 /*
 Rest server part!
  */
-var Promise, Sleep, something;
+var Promise, Sleep, request, something;
 
 Sleep = require('sleeprest');
 
 Promise = require('bluebird');
+
+request = require('request');
 
 something = function(val) {
   if (val == null) {
@@ -67,14 +69,54 @@ module.exports = function(server, fn) {
     } else {
       return entity.read();
     }
-  }).put(function(req) {
-    var path;
+  }).put(Sleep.bodyParser(), function(req) {
+    var destination, path, source, sources;
     path = req.params.path;
-    this.status(201);
-    req.pipe(req.drive.create(path));
-    return {
-      path: path
+    if (req.body == null) {
+      this.status(201);
+      req.pipe(req.drive.create(path));
+      return {
+        path: path,
+        note: 'File uploaded perfectly fine :-)'
+      };
+    }
+    sources = {
+      http: function(opts, dest) {
+        var url;
+        url = opts.url;
+        if (url == null) {
+          throw new Error("HTTP:422 Need to have URL to download from!");
+        }
+        return new Promise(function(yell, cry) {
+          var response;
+          response = request(opts.url);
+          response.pipe(dest);
+          response.on('error', function(err) {
+            return cry(err);
+          });
+          return response.on('end', function() {
+            return yell("Successfull download from " + opts.url + "!");
+          });
+        });
+      }
     };
+    source = req.body.source;
+    if (source == null) {
+      throw new Error("HTTP:422 I don't know what to do, please tell me what source to get this from! (Source: " + (Object.keys(sources).join(', ')) + ")");
+    }
+    if (sources[source] == null) {
+      throw new Error("HTTP:501 Can't handle these kind of sources yet, but I can handle " + (Object.keys(sources).join(', ')) + "!");
+    }
+    destination = req.drive.create(path);
+    return sources[source](req.body, destination).then(function(note) {
+      return {
+        statusCode: 201,
+        path: path,
+        note: note
+      };
+    })["catch"](function(err) {
+      throw new Error("HTTP:418 Source gave an error, D-: (" + err.message + ")");
+    });
   }).post(getEntity, Sleep.bodyParser(), function(req) {
     var action, entity, to;
     entity = req.entity;

@@ -5,6 +5,9 @@ Rest server part!
 Sleep = require 'sleeprest'
 Promise = require 'bluebird'
 
+# For put types
+request = require 'request'
+
 something = (val) ->
   if not val?
     throw new error "HTTP:422 Need something!!!!"
@@ -55,12 +58,48 @@ module.exports = (server, fn) ->
 
 
   # WRITE
-  .put (req) ->
+  .put Sleep.bodyParser(), (req) ->
     {path} = req.params
 
-    @status 201
-    req.pipe req.drive.create path
-    path: path
+    # If it is a 'raw' put, put.
+    if not req.body?
+      @status 201
+      req.pipe req.drive.create path
+      return {
+        path: path
+        note: 'File uploaded perfectly fine :-)'
+      }
+
+    sources =
+      http: (opts, dest) ->
+        {url} = opts
+        if not url?
+          throw new Error "HTTP:422 Need to have URL to download from!"
+
+        new Promise (yell, cry) ->
+          response = request(opts.url)
+          response.pipe dest
+          response.on 'error', (err) ->
+            cry err
+          response.on 'end', ->
+            yell "Successfull download from #{opts.url}!"
+
+
+    # Action-able put, it should have a 'type' field
+    {source} = req.body
+    if not source?
+      throw new Error "HTTP:422 I don't know what to do, please tell me what source to get this from! (Source: #{Object.keys(sources).join(', ')})"
+    if not sources[source]?
+      throw new Error "HTTP:501 Can't handle these kind of sources yet, but I can handle #{Object.keys(sources).join(', ')}!"
+
+    destination = req.drive.create path
+    sources[source](req.body, destination).then (note) ->
+      statusCode: 201
+      path: path
+      note: note
+
+    .catch (err) ->
+      throw new Error "HTTP:418 Source gave an error, D-: (#{err.message})"
 
 
   # ALTER

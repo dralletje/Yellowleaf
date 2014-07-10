@@ -43,13 +43,11 @@ module.exports = (auth, port=21) ->
       password = args.join ' '
       Promise.try(auth, [@user, password]).then (drive) =>
         @Drive = drive
-        console.log 'Woot'
         @write '230 OK.'
         [p.explorer, p.modify, p.download, p.dataSocket, p.unknownCommand].forEach (pl) =>
           pl.call this, @Drive
 
       .catch (e) =>
-        console.log 'Yeah'
         @write '530 The gates shall not open for you! ('+e.message+')'
         return
 

@@ -50,7 +50,6 @@ module.exports = function(auth, port) {
       return Promise["try"](auth, [this.user, password]).then((function(_this) {
         return function(drive) {
           _this.Drive = drive;
-          console.log('Woot');
           _this.write('230 OK.');
           return [p.explorer, p.modify, p.download, p.dataSocket, p.unknownCommand].forEach(function(pl) {
             return pl.call(_this, _this.Drive);
@@ -58,7 +57,6 @@ module.exports = function(auth, port) {
         };
       })(this))["catch"]((function(_this) {
         return function(e) {
-          console.log('Yeah');
           _this.write('530 The gates shall not open for you! (' + e.message + ')');
         };
       })(this));

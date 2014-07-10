@@ -7,7 +7,7 @@ Promise = require 'bluebird'
 
 something = (val) ->
   if not val?
-    throw new error "404, need something!!!!"
+    throw new error "HTTP:422 Need something!!!!"
   val
 
 
@@ -16,6 +16,8 @@ module.exports = (server, fn) ->
   getEntity = (req) ->
     req.drive.stat(req.params.path).then (stat) ->
       req.entity = stat
+    .catch (err) ->
+      throw new Error "HTTP:404 File not found."
 
   server.res(/(.*)/, 'path').use (req) ->
     # Use the callback fn to get the drive

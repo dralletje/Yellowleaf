@@ -48,41 +48,41 @@ console.log """
 before ->
   @client = new Client 'http://localhost:'+port
 
-describe 'Root', ->
-  it 'should list root', ->
-    @client.get('/').then(statuscode 200).then (result) ->
-      result.body.should.have.property 'isDirectory', true
-      result.headers.should.have.property 'x-type', 'directory'
-      result.body.files.should.be.instanceof Array
+describe 'REST:', ->
+  describe 'Root', ->
+    it 'should list root', ->
+      @client.get('/').then(statuscode 200).then (result) ->
+        result.body.should.have.property 'isDirectory', true
+        result.headers.should.have.property 'x-type', 'directory'
+        result.body.files.should.be.instanceof Array
 
-describe 'File', ->
-  it 'should generate a random filename and content', ->
-    @name = randomstring() + '.txt'
-    @name2 = randomstring() + '.json'
-    @content = randomstring 512
+  describe 'File', ->
+    it 'should generate a random filename and content', ->
+      @name = randomstring() + '.txt'
+      @name2 = randomstring() + '.json'
+      @content = randomstring 512
 
-  it 'should make a file', ->
-    @client.put("/#{@name}").send(@content).then(statuscode 201)
-    .should.eventually.have.property('body')
-    .with.property('path', "/#{@name}")
+    it 'should make a file', ->
+      @client.put("/#{@name}").send(@content).then(statuscode 201)
+      .should.eventually.have.property('body')
+      .with.property('path', "/#{@name}")
 
-  it 'should give me the contents of the file', ->
-    @client.get("/#{@name}").then(statuscode 200).then (res) ->
-      res.body = res.body.toString()
-      res
-    .should.eventually.have.property('body', @content)
+    it 'should give me the contents of the file', ->
+      @client.get("/#{@name}").then(statuscode 200).then (res) ->
+        res.body = res.body.toString()
+        res
+      .should.eventually.have.property('body', @content)
 
-  it 'should rename the file', ->
-    @client.post("/#{@name}", 'Content-Type': 'application/json').send(
-      action: 'rename'
-      to: '/' + @name2
-    ).then(statuscode 301).then (result) =>
-      result.headers.should.have.property 'location'
-      result.body.should.have.property 'location', '/' + @name2
+    it 'should rename the file', ->
+      @client.post("/#{@name}", 'Content-Type': 'application/json').send(
+        action: 'rename'
+        to: '/' + @name2
+      ).then(statuscode 301).then (result) =>
+        result.headers.should.have.property 'location'
+        result.body.should.have.property 'location', '/' + @name2
 
-  it 'should delete the file', ->
-    @client.delete("/#{@name2}").then(statuscode 200)
-
+    it 'should delete the file', ->
+      @client.delete("/#{@name2}").then(statuscode 200)
 after ->
   debug 'Closing connection..'
   server.close?()

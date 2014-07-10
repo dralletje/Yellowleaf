@@ -11,7 +11,7 @@ Promise = require('bluebird');
 
 something = function(val) {
   if (val == null) {
-    throw new error("404, need something!!!!");
+    throw new error("HTTP:422 Need something!!!!");
   }
   return val;
 };
@@ -21,6 +21,8 @@ module.exports = function(server, fn) {
   getEntity = function(req) {
     return req.drive.stat(req.params.path).then(function(stat) {
       return req.entity = stat;
+    })["catch"](function(err) {
+      throw new Error("HTTP:404 File not found.");
     });
   };
   return server.res(/(.*)/, 'path').use(function(req) {

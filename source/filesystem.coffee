@@ -1,8 +1,11 @@
 ## Example filesystem
 
-path = require 'path'
+Path = require 'path'
 Promise = require 'bluebird'
 fs = Promise.promisifyAll require 'fs'
+
+rimraf = Promise.promisify require 'rimraf'
+mkdirp = Promise.promisify require 'mkdirp'
 
 debug = require('debug')('[Drive]', 'red')
 
@@ -15,13 +18,13 @@ module.exports = class SimpleDrive
     if not @cwd? then @cwd = '/'
     if not @directory? then @directory = '/'
 
-    file = path.join files...
+    file = Path.join files...
     if file.indexOf('/') isnt 0
-      file = path.join @cwd, file
-    file = path.join '/', file
+      file = Path.join @cwd, file
+    file = Path.join '/', file
 
     [
-      path.join @directory, file
+      Path.join @directory, file
       file
     ]
 
@@ -29,7 +32,7 @@ module.exports = class SimpleDrive
   # Move the CWD
   dir: (moveTo) ->
     if moveTo.indexOf('/') isnt 0
-      moveTo = path.join '/', @cwd, moveTo
+      moveTo = Path.join '/', @cwd, moveTo
     @cwd = moveTo
 
   stat: (path...) ->
@@ -51,11 +54,12 @@ module.exports = class SimpleDrive
 
   create: (path...) ->
     [fullpath, relativepath] = @path path...
-    new Promise (yell, cry) ->
-      fs.createWriteStream(fullpath)
-        .on 'open', ->
-          yell this
-        .on('error', cry)
+    mkdirp(Path.dirname(fullpath), {}).then ->
+      new Promise (yell, cry) ->
+        fs.createWriteStream(fullpath)
+          .on 'open', ->
+            yell this
+          .on 'error', cry
 
   createDir: (path...) ->
     [fullpath, relativepath] = @path path...
@@ -84,6 +88,9 @@ module.exports.Entity = class Entity
     fs.renameAsync(@fullpath, fullpath).then =>
       @drive.stat to
 
+  remove: ->
+    rimraf @fullpath
+
 module.exports.Directory = class Directory extends Entity
   list: ->
     fs.readdirAsync(@fullpath).then (entities) =>
@@ -92,13 +99,8 @@ module.exports.Directory = class Directory extends Entity
 
   entity: (path...) ->
     @drive.stat @relpath, path...
-
-  remove: ->
-    fs.rmdirAsync @fullpath
+    
 
 module.exports.File = class File extends Entity
   read: ->
     fs.createReadStream @fullpath
-
-  remove: ->
-    fs.unlinkAsync @fullpath

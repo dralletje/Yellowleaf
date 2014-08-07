@@ -114,6 +114,19 @@ describe 'REST:', ->
     it 'should delete the file', ->
       @client.delete(@path).then(statuscode 200)
 
+  describe 'Recursive removal', ->
+    it 'should make file inside folder', ->
+      @folder = randomstring()
+      @file = randomstring() + '.txt'
+      @content = randomstring 512
+
+      @client.put("/#{@folder}/#{@file}").send(@content).then(statuscode 201)
+      .should.eventually.have.property('body')
+      .with.property('path', "/#{@folder}/#{@file}")
+
+    it 'should remove this folder with his file', ->
+      @client.delete("/#{@folder}").then(statuscode 200)
+
 
   describe 'Errors', ->
     it 'should not write a file to a directory', ->

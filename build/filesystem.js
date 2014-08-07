@@ -1,14 +1,18 @@
 // YellowLeaf FTP by Michiel Dral 
-var Directory, Entity, File, Promise, SimpleDrive, debug, fs, path,
+var Directory, Entity, File, Path, Promise, SimpleDrive, debug, fs, mkdirp, rimraf,
   __slice = [].slice,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
-path = require('path');
+Path = require('path');
 
 Promise = require('bluebird');
 
 fs = Promise.promisifyAll(require('fs'));
+
+rimraf = Promise.promisify(require('rimraf'));
+
+mkdirp = Promise.promisify(require('mkdirp'));
 
 debug = require('debug')('[Drive]', 'red');
 
@@ -27,17 +31,17 @@ module.exports = SimpleDrive = (function() {
     if (this.directory == null) {
       this.directory = '/';
     }
-    file = path.join.apply(path, files);
+    file = Path.join.apply(Path, files);
     if (file.indexOf('/') !== 0) {
-      file = path.join(this.cwd, file);
+      file = Path.join(this.cwd, file);
     }
-    file = path.join('/', file);
-    return [path.join(this.directory, file), file];
+    file = Path.join('/', file);
+    return [Path.join(this.directory, file), file];
   };
 
   SimpleDrive.prototype.dir = function(moveTo) {
     if (moveTo.indexOf('/') !== 0) {
-      moveTo = path.join('/', this.cwd, moveTo);
+      moveTo = Path.join('/', this.cwd, moveTo);
     }
     return this.cwd = moveTo;
   };
@@ -68,10 +72,12 @@ module.exports = SimpleDrive = (function() {
     var fullpath, path, relativepath, _ref;
     path = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
     _ref = this.path.apply(this, path), fullpath = _ref[0], relativepath = _ref[1];
-    return new Promise(function(yell, cry) {
-      return fs.createWriteStream(fullpath).on('open', function() {
-        return yell(this);
-      }).on('error', cry);
+    return mkdirp(Path.dirname(fullpath), {}).then(function() {
+      return new Promise(function(yell, cry) {
+        return fs.createWriteStream(fullpath).on('open', function() {
+          return yell(this);
+        }).on('error', cry);
+      });
     });
   };
 
@@ -114,6 +120,10 @@ module.exports.Entity = Entity = (function() {
     })(this));
   };
 
+  Entity.prototype.remove = function() {
+    return rimraf(this.fullpath);
+  };
+
   return Entity;
 
 })();
@@ -141,10 +151,6 @@ module.exports.Directory = Directory = (function(_super) {
     return (_ref = this.drive).stat.apply(_ref, [this.relpath].concat(__slice.call(path)));
   };
 
-  Directory.prototype.remove = function() {
-    return fs.rmdirAsync(this.fullpath);
-  };
-
   return Directory;
 
 })(Entity);
@@ -158,10 +164,6 @@ module.exports.File = File = (function(_super) {
 
   File.prototype.read = function() {
     return fs.createReadStream(this.fullpath);
-  };
-
-  File.prototype.remove = function() {
-    return fs.unlinkAsync(this.fullpath);
   };
 
   return File;

@@ -26,12 +26,8 @@ standardReplies = {
   site: '500 Go away'
 };
 
-module.exports = function(auth, port) {
-  var server;
-  if (port == null) {
-    port = 21;
-  }
-  return server = new Ftpd(function() {
+module.exports = function(auth) {
+  return new Ftpd(function() {
     var key, response;
     this.mode = "ascii";
     this.user = void 0;
@@ -91,8 +87,5 @@ module.exports = function(auth, port) {
       console.log('OOOPS', e.message);
       return this.write('500 Something went wrong, no idea what though.');
     });
-  }).listen(port).on('error', function(e) {
-    console.log(e.message);
-    return process.exit(0);
   });
 };

@@ -13,13 +13,14 @@ EventEmitter::waitFor = (event) ->
       @removeListener 'error', error
     .once 'error', error
 
+
 class MatchError extends Error
-  
 String::exceptionMatch = (regexp) ->
   match = @match regexp
   if not match?
     throw new MatchError "Regexp '#{regexp}' didn't match '#{this.toString().trim()}'."
   match
+
 
 module.exports = class FtpClient
   constructor: (port, host) ->

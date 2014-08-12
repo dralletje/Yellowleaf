@@ -15,10 +15,11 @@ ftpport = Math.round Math.random() * 100000
 server = ftp (user, password) ->
   if user is 'jelle' and password is 'jelle'
     new Drive process.cwd() + "/test/example/ftp"
-, ftpport
-server.debug(no)
-console.log 'FTP listening on', ftpport
 
+.listen(ftpport)
+.debug(no)
+
+console.log 'FTP listening on', ftpport
 
 
 # PREPARATION

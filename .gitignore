@@ -1,5 +1,5 @@
 # Ignore the addapted app.coffee
-/app.coffee
+/build/app.js
 /source/app.coffee
 
 # Npm node_modules

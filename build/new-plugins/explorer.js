@@ -7,35 +7,33 @@ require('date');
 
 debug = function() {};
 
-explorer = function(drive) {
-  this.on('command.cwd', function(cwd) {
+explorer = function(ftp, drive) {
+  ftp.on('command.cwd', function(cwd) {
     drive.dir(cwd);
     return this.write('250 Ok.');
   });
-  this.on('command.pwd', function() {
+  ftp.on('command.pwd', function() {
     debug(drive);
     return this.write("257 \"" + drive.cwd + "\"");
   });
-  this.on('command.cdup', function() {
+  ftp.on('command.cdup', function() {
     drive.dir('../');
     return this.write("200 Lifted");
   });
-  this.on('command.nlst', function(folder) {
+  ftp.on('command.nlst', function(folder) {
     return Promise.all([
       drive.stat(folder).then(function(directory) {
         return directory.list();
       }), this.dataServer.getConnection()
-    ]).spread((function(_this) {
-      return function(files, connection) {
-        files = files.map(function(file) {
-          return file.slice(1);
-        }).map(function(file) {
-          return file + "\r\n";
-        });
-        debug(_this.files);
-        return connection.write(_this.files.join(""));
-      };
-    })(this)).then((function(_this) {
+    ]).spread(function(files, connection) {
+      files = files.map(function(file) {
+        return file.slice(1);
+      }).map(function(file) {
+        return file + "\r\n";
+      });
+      debug(this.files);
+      return connection.write(this.files.join(""));
+    }).then((function(_this) {
       return function() {
         _this.dataServer.sayGoodbye().end();
         return debug('Done!');
@@ -44,7 +42,7 @@ explorer = function(drive) {
       return debug(err.stack);
     });
   });
-  this.on('command.list', function(folder) {
+  ftp.on('command.list', function(folder) {
     return Promise.all([
       drive.stat(folder).then(function(directory) {
         return directory.list();
@@ -79,7 +77,7 @@ explorer = function(drive) {
       };
     })(this));
   });
-  return this.on('command.size', function(path) {
+  return ftp.on('command.size', function(path) {
     return drive.stat(path).then(function(file) {
       return this.write("213 " + file.stat.size.getTime());
     });

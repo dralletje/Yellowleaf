@@ -28,24 +28,24 @@ standardReplies =
   site: '500 Go away'
 
 module.exports = (auth) ->
-  new Ftpd ->
-    @mode = "ascii"
-    @user = undefined
+  new Ftpd (client) ->
+    client.mode = "ascii"
+    client.user = undefined
 
     ###
     Authentication
     ###
-    @on 'command.user', (user) ->
+    client.on 'command.user', (user) ->
       @user = user.toLowerCase()
       @write '331 OK'
 
-    @on 'command.pass', (args...) ->
+    client.on 'command.pass', (args...) ->
       password = args.join ' '
       Promise.try(auth, [@user, password]).then (drive) =>
         @Drive = drive
         @write '230 OK.'
         [p.explorer, p.modify, p.download, p.dataSocket, p.unknownCommand].forEach (pl) =>
-          pl.call this, @Drive
+          pl this, @Drive
 
       .catch (e) =>
         @write '530 The gates shall not open for you! ('+e.message+')'
@@ -54,14 +54,14 @@ module.exports = (auth) ->
     ###
     Type and opts.. and maybe more like it later
     ###
-    @on 'command.type', (modechar) ->
+    client.on 'command.type', (modechar) ->
       if modechar is 'I'
         @mode = null
       else if modechar is 'A'
         @mode = "ascii"
       @write '200 Custom mode activated'
 
-    @on 'command.opts', (opt) ->
+    client.on 'command.opts', (opt) ->
         if opt.toUpperCase() is 'UTF8 ON'
           @write '200 Yo, cool with that!'
           return
@@ -71,10 +71,10 @@ module.exports = (auth) ->
 
     ## Nonsense commands
     for key, response of standardReplies
-      @on "command.#{key}", ((value) ->
+      client.on "command.#{key}", ((value) ->
         @write value
-      ).bind this, response
+      ).bind client, response
 
-    @on 'error', (e) ->
+    client.on 'error', (e) ->
       console.log 'OOOPS', e.message
       @write '500 Something went wrong, no idea what though.'

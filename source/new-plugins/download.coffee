@@ -1,15 +1,15 @@
 Promise = require 'bluebird'
 
-download = (drive) ->
+download = (ftp, drive) ->
   ## Upload and download
-  @on 'command.retr', (path) ->
+  ftp.on 'command.retr', (path) ->
     Promise.all([
       drive.stat(path)
     , @dataServer.getConnection()
     ]).spread (file, connection) ->
       file.read().pipe connection
 
-  @on 'command.stor', (path) ->
+  ftp.on 'command.stor', (path) ->
     Promise.all([
       drive.create(path)
     , @dataServer.getConnection()

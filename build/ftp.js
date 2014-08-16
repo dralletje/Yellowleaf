@@ -27,19 +27,19 @@ standardReplies = {
 };
 
 module.exports = function(auth) {
-  return new Ftpd(function() {
+  return new Ftpd(function(client) {
     var key, response;
-    this.mode = "ascii";
-    this.user = void 0;
+    client.mode = "ascii";
+    client.user = void 0;
 
     /*
     Authentication
      */
-    this.on('command.user', function(user) {
+    client.on('command.user', function(user) {
       this.user = user.toLowerCase();
       return this.write('331 OK');
     });
-    this.on('command.pass', function() {
+    client.on('command.pass', function() {
       var args, password;
       args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
       password = args.join(' ');
@@ -48,7 +48,7 @@ module.exports = function(auth) {
           _this.Drive = drive;
           _this.write('230 OK.');
           return [p.explorer, p.modify, p.download, p.dataSocket, p.unknownCommand].forEach(function(pl) {
-            return pl.call(_this, _this.Drive);
+            return pl(_this, _this.Drive);
           });
         };
       })(this))["catch"]((function(_this) {
@@ -61,7 +61,7 @@ module.exports = function(auth) {
     /*
     Type and opts.. and maybe more like it later
      */
-    this.on('command.type', function(modechar) {
+    client.on('command.type', function(modechar) {
       if (modechar === 'I') {
         this.mode = null;
       } else if (modechar === 'A') {
@@ -69,7 +69,7 @@ module.exports = function(auth) {
       }
       return this.write('200 Custom mode activated');
     });
-    this.on('command.opts', function(opt) {
+    client.on('command.opts', function(opt) {
       if (opt.toUpperCase() === 'UTF8 ON') {
         this.write('200 Yo, cool with that!');
         return;
@@ -79,11 +79,11 @@ module.exports = function(auth) {
     });
     for (key in standardReplies) {
       response = standardReplies[key];
-      this.on("command." + key, (function(value) {
+      client.on("command." + key, (function(value) {
         return this.write(value);
-      }).bind(this, response));
+      }).bind(client, response));
     }
-    return this.on('error', function(e) {
+    return client.on('error', function(e) {
       console.log('OOOPS', e.message);
       return this.write('500 Something went wrong, no idea what though.');
     });

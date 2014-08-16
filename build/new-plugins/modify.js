@@ -3,8 +3,8 @@ var fs, modify;
 
 fs = require('fs');
 
-modify = function(drive) {
-  this.on('command.mkd', function(file) {
+modify = function(ftp, drive) {
+  ftp.on('command.mkd', function(file) {
     return drive.createDir(file).then((function(_this) {
       return function() {
         return _this.write('257 Directory created, at your service.');
@@ -16,7 +16,7 @@ modify = function(drive) {
       };
     })(this));
   });
-  this.on('command.rmd', function(path) {
+  ftp.on('command.rmd', function(path) {
     return drive.stat(path).then((function(_this) {
       return function(file) {
         file.remove();
@@ -29,7 +29,7 @@ modify = function(drive) {
       };
     })(this));
   });
-  this.on('command.dele', function(path) {
+  ftp.on('command.dele', function(path) {
     return drive.stat(path).then((function(_this) {
       return function(file) {
         file.remove();
@@ -42,11 +42,11 @@ modify = function(drive) {
       };
     })(this));
   });
-  this.on('command.rnfr', function(path) {
+  ftp.on('command.rnfr', function(path) {
     this.rnfr = path;
     return this.write('350 Will memorize it!');
   });
-  return this.on('command.rnto', function(path) {
+  return ftp.on('command.rnto', function(path) {
     if (this.rnfr == null) {
       return this.write('500 AND WHERE IS THE RNFR COMMAND?!');
     }

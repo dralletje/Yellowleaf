@@ -1,5 +1,3 @@
-#polyfill = require "polyfill"
-
 Promise = require 'bluebird'
 
 require 'date'
@@ -20,33 +18,28 @@ explorer = (drive) ->
     drive.dir '../'
     @write "200 Lifted"
 
+  # FIXME: Fix this, it is just not working..
   @on 'command.nlst', (folder) ->
-    console.log 'Lister'
-    promiseFiles = undefined
-    connection = undefined
-
-    #drive.stat(folder).then () ->
-
-    @fs('readdir', folder).then (files) =>
+    Promise.all([
+      drive.stat(folder).then (directory) ->
+        directory.list()
+    ,
+      @dataServer.getConnection()
+    ]).spread (files, connection) =>
       files = files
-      .map(@getFullPath)
       .map (file) ->
         file.slice 1
       .map (file) ->
         file + "\r\n"
-      promiseFiles = files
-      @dataServer.getConnection()
 
-    .then (connection) ->
-      debug promiseFiles
-      connection.write promiseFiles.join ""
-
-    .then () =>
+      debug @files
+      connection.write @files.join ""
+    .then =>
       @dataServer.sayGoodbye().end()
       debug 'Done!'
-
     .catch (err) ->
       debug err.stack
+
 
   @on 'command.list', (folder) ->
     Promise.all([

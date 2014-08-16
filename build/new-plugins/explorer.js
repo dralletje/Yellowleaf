@@ -21,24 +21,21 @@ explorer = function(drive) {
     return this.write("200 Lifted");
   });
   this.on('command.nlst', function(folder) {
-    var connection, promiseFiles;
-    console.log('Lister');
-    promiseFiles = void 0;
-    connection = void 0;
-    return this.fs('readdir', folder).then((function(_this) {
-      return function(files) {
-        files = files.map(_this.getFullPath).map(function(file) {
+    return Promise.all([
+      drive.stat(folder).then(function(directory) {
+        return directory.list();
+      }), this.dataServer.getConnection()
+    ]).spread((function(_this) {
+      return function(files, connection) {
+        files = files.map(function(file) {
           return file.slice(1);
         }).map(function(file) {
           return file + "\r\n";
         });
-        promiseFiles = files;
-        return _this.dataServer.getConnection();
+        debug(_this.files);
+        return connection.write(_this.files.join(""));
       };
-    })(this)).then(function(connection) {
-      debug(promiseFiles);
-      return connection.write(promiseFiles.join(""));
-    }).then((function(_this) {
+    })(this)).then((function(_this) {
       return function() {
         _this.dataServer.sayGoodbye().end();
         return debug('Done!');

@@ -5,11 +5,13 @@ crypto = require 'crypto'
 Promise = require 'bluebird'
 
 ## Plugins
-plugins = [
+filesystemPlugins = [
   require './new-plugins/explorer'
   require './new-plugins/modify'
   require './new-plugins/download'
+]
 
+basePlugins = [
   Ftpd.defaults.nonFileCommands
   Ftpd.defaults.dataSocket
   Ftpd.defaults.unknownCommand
@@ -39,10 +41,15 @@ module.exports = (auth) ->
     client.on 'command.pass', (args...) ->
       password = args.join ' '
       Promise.try(auth, [@user, password]).then (drive) =>
+        # Base plugins TODO: Make this more elegant, some way
+        basePlugins.forEach (pl) ->
+          pl client
+
+        filesystemPlugins.forEach (pl) ->
+          pl client, drive
+
         @Drive = drive
         @write '230 OK.'
-        plugins.forEach (pl) =>
-          pl this, @Drive
 
       .catch (e) =>
         @write '530 The gates shall not open for you! ('+e.message+')'

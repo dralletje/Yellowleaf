@@ -1,5 +1,5 @@
 // YellowLeaf FTP by Michiel Dral 
-var Ftpd, Promise, crypto, fs, plugins,
+var Ftpd, Promise, basePlugins, crypto, filesystemPlugins, fs,
   __slice = [].slice;
 
 Ftpd = require('ftpd');
@@ -10,7 +10,9 @@ crypto = require('crypto');
 
 Promise = require('bluebird');
 
-plugins = [require('./new-plugins/explorer'), require('./new-plugins/modify'), require('./new-plugins/download'), Ftpd.defaults.nonFileCommands, Ftpd.defaults.dataSocket, Ftpd.defaults.unknownCommand];
+filesystemPlugins = [require('./new-plugins/explorer'), require('./new-plugins/modify'), require('./new-plugins/download')];
+
+basePlugins = [Ftpd.defaults.nonFileCommands, Ftpd.defaults.dataSocket, Ftpd.defaults.unknownCommand];
 
 module.exports = function(auth) {
   return new Ftpd(function(client) {
@@ -29,11 +31,14 @@ module.exports = function(auth) {
       password = args.join(' ');
       return Promise["try"](auth, [this.user, password]).then((function(_this) {
         return function(drive) {
-          _this.Drive = drive;
-          _this.write('230 OK.');
-          return plugins.forEach(function(pl) {
-            return pl(_this, _this.Drive);
+          basePlugins.forEach(function(pl) {
+            return pl(client);
           });
+          filesystemPlugins.forEach(function(pl) {
+            return pl(client, drive);
+          });
+          _this.Drive = drive;
+          return _this.write('230 OK.');
         };
       })(this))["catch"]((function(_this) {
         return function(e) {

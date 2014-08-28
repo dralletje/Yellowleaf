@@ -128,6 +128,36 @@ describe 'REST:', ->
       @client.delete("/#{@folder}").then(statuscode 200)
 
 
+  describe 'File modification', ->
+    it 'should make a file', ->
+      @file = '/' + randomstring() + '.txt'
+      @lines = [
+        randomstring(64)
+        randomstring(64)
+        randomstring(64)
+        randomstring(64)
+        randomstring(64)
+      ]
+      @client.put(@file).send(@lines.join "\n").then(statuscode 201)
+
+    it 'should change the lines 2 and 5', ->
+      @lines[1] = randomstring(64)
+      @lines[4] = randomstring(64)
+
+      @client.post(@file).send
+        action: 'edit'
+        lines:
+          2: @lines[1]
+          5: @lines[4]
+      .then(statuscode 200)
+
+    it 'should have the lines changes', ->
+      @client.get(@file).then(statuscode 200)
+        .get('body').call('toString').should.become(@lines.join "\n")
+
+    it 'should clean up the file', ->
+      @client.delete(@file).then(statuscode 200)
+
   describe 'Errors', ->
     it 'should not write a file to a directory', ->
       @client.put('/').send(randomstring 512)

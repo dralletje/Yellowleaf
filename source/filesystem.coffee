@@ -3,6 +3,7 @@
 Path = require 'path'
 Promise = require 'bluebird'
 fs = Promise.promisifyAll require 'fs'
+os = require 'os'
 
 rimraf = Promise.promisify require 'rimraf'
 mkdirp = Promise.promisify require 'mkdirp'
@@ -99,8 +100,32 @@ module.exports.Directory = class Directory extends Entity
 
   entity: (path...) ->
     @drive.stat @relpath, path...
-    
+
 
 module.exports.File = class File extends Entity
   read: ->
     fs.createReadStream @fullpath
+
+  write: ->
+    fs.createWriteStream @fullpath
+
+  modify: (fnOrStream) ->
+    now = new Date
+    path = [
+      os.tmpdir()
+      now.getYear(), now.getMonth(), now.getDate()
+      '-'
+      process.pid
+      '-'
+      (Math.random() * 0x100000000 + 1).toString(36)
+    ].join ''
+
+    new Promise (yell, cry) =>
+      @read().pipe(fnOrStream).pipe(fs.createWriteStream path).on('finish', yell)
+
+    .bind(this)
+    .then ->
+      @remove()
+
+    .then ->
+      fs.renameAsync(path, @fullpath)

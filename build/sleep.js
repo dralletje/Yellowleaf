@@ -3,13 +3,53 @@
 /*
 Rest server part!
  */
-var Promise, Sleep, request, something;
+var LinesReplacer, Promise, Sleep, Transform, request, something,
+  __hasProp = {}.hasOwnProperty,
+  __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
 Sleep = require('sleeprest');
 
 Promise = require('bluebird');
 
 request = require('request');
+
+Transform = require('readable-stream').Transform;
+
+LinesReplacer = (function(_super) {
+  __extends(LinesReplacer, _super);
+
+  function LinesReplacer(lines) {
+    LinesReplacer.__super__.constructor.apply(this, arguments);
+    this.lines = lines;
+    this.line = 0;
+    this.state = 0;
+  }
+
+  LinesReplacer.prototype._transform = function(chunk, encoding, cb) {
+    var i, line, lines, replaceLines, _i, _len;
+    lines = chunk.toString().split("\n");
+    for (i = _i = 0, _len = lines.length; _i < _len; i = ++_i) {
+      line = lines[i];
+      if (i !== 0) {
+        this.push("\n");
+        this.line++;
+        this.state = 0;
+      } else if (this.state === 1) {
+        return cb();
+      }
+      if ((replaceLines = this.lines[this.line + 1]) != null) {
+        this.state = 1;
+        this.push(replaceLines);
+      } else {
+        this.push(line);
+      }
+    }
+    return cb();
+  };
+
+  return LinesReplacer;
+
+})(Transform);
 
 something = function(val) {
   if (val == null) {
@@ -125,9 +165,10 @@ module.exports = function(server, fn) {
       };
     });
   }).post(getEntity, Sleep.bodyParser(), function(req) {
-    var action, entity, to;
+    var action, entity, lines, replacer, to;
     entity = req.entity;
     action = req.body.action;
+    action = action.toLowerCase();
     if (action === 'rename') {
       to = this.require(req.body, 'to');
       return entity.rename(to).then((function(_this) {
@@ -139,6 +180,16 @@ module.exports = function(server, fn) {
           };
         };
       })(this));
+    } else if (action === 'edit') {
+      lines = this.require(req.body, 'lines');
+      replacer = new LinesReplacer(lines);
+      return entity.modify(replacer).then(function() {
+        return {
+          lines: lines
+        };
+      });
+    } else {
+      throw new Error("HTTP:501 Don't know what you mean? " + action + "?");
     }
   })["delete"](getEntity, function(req) {
     var entity;

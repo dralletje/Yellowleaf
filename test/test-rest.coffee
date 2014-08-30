@@ -12,7 +12,7 @@ Sleep = require 'sleeprest'
 yellowleaf = require '../build/sleep'
 Drive = require '../build/filesystem'
 
-port = Math.round Math.random() * 100000
+port = Math.round Math.random() * 65536
 server = new Sleep
 drive = new Drive process.cwd() + "/test/example/rest"
 yellowleaf server, ->
@@ -131,27 +131,33 @@ describe 'REST:', ->
   describe 'File modification', ->
     it 'should make a file', ->
       @file = '/' + randomstring() + '.txt'
+      @l = 2
       @lines = [
-        randomstring(64)
-        randomstring(64)
-        randomstring(64)
-        randomstring(64)
-        randomstring(64)
+        randomstring(@l)
+        randomstring(@l)
+        randomstring(@l)
+        randomstring(@l)
+        randomstring(@l)
       ]
       @client.put(@file).send(@lines.join "\n").then(statuscode 201)
 
-    it 'should change the lines 2 and 5', ->
-      @lines[1] = randomstring(64)
-      @lines[4] = randomstring(64)
+    it 'should validate the contents', ->
+      @client.get(@file).then(statuscode 200).then (res) ->
+        res.body.toString()
+      .should.become(@lines.join "\n")
 
-      @client.post(@file).send
+    it 'should change the lines 2 and 5', ->
+      @lines[1] = randomstring(@l)
+      @lines[4] = randomstring(@l)
+
+      @client.post(@file, 'Content-Type': 'application/json').send
         action: 'edit'
         lines:
           2: @lines[1]
           5: @lines[4]
       .then(statuscode 200)
 
-    it 'should have the lines changes', ->
+    it 'should have the lines changed', ->
       @client.get(@file).then(statuscode 200)
         .get('body').call('toString').should.become(@lines.join "\n")
 

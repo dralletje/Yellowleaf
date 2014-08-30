@@ -4,3 +4,6 @@
 
 # Npm node_modules
 /node_modules
+
+# Test products
+/test/example

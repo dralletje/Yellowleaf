@@ -11,7 +11,7 @@ debug = ->
 ftp = require '../build/ftp'
 Drive = require '../build/filesystem'
 
-ftpport = Math.round Math.random() * 100000
+ftpport = Math.round Math.random() * 65536
 server = ftp (user, password) ->
   if user is 'jelle' and password is 'jelle'
     new Drive process.cwd() + "/test/example/ftp"

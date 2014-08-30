@@ -1,5 +1,5 @@
 // YellowLeaf FTP by Michiel Dral 
-var Directory, Entity, File, Path, Promise, SimpleDrive, debug, fs, mkdirp, rimraf,
+var Directory, Entity, File, Path, Promise, SimpleDrive, debug, fs, mkdirp, os, rimraf,
   __slice = [].slice,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -9,6 +9,8 @@ Path = require('path');
 Promise = require('bluebird');
 
 fs = Promise.promisifyAll(require('fs'));
+
+os = require('os');
 
 rimraf = Promise.promisify(require('rimraf'));
 
@@ -164,6 +166,25 @@ module.exports.File = File = (function(_super) {
 
   File.prototype.read = function() {
     return fs.createReadStream(this.fullpath);
+  };
+
+  File.prototype.write = function() {
+    return fs.createWriteStream(this.fullpath);
+  };
+
+  File.prototype.modify = function(fnOrStream) {
+    var now, path;
+    now = new Date;
+    path = [os.tmpdir(), now.getYear(), now.getMonth(), now.getDate(), '-', process.pid, '-', (Math.random() * 0x100000000 + 1).toString(36)].join('');
+    return new Promise((function(_this) {
+      return function(yell, cry) {
+        return _this.read().pipe(fnOrStream).pipe(fs.createWriteStream(path)).on('finish', yell);
+      };
+    })(this)).bind(this).then(function() {
+      return this.remove();
+    }).then(function() {
+      return fs.renameAsync(path, this.fullpath);
+    });
   };
 
   return File;

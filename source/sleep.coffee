@@ -5,8 +5,38 @@ Rest server part!
 Sleep = require 'sleeprest'
 Promise = require 'bluebird'
 
-# For put types
+# For PUT types
 request = require 'request'
+
+# For POST modifiers
+{Transform,} = require 'readable-stream'
+class LinesReplacer extends Transform
+  constructor: (lines) ->
+    super
+    @lines = lines
+    @line = 0
+    @state = 0 # (0 = searching, 1 = replacing)
+
+  _transform: (chunk, encoding, cb) ->
+    lines = chunk.toString().split("\n")
+    for line, i in lines
+      if i isnt 0 # First part doesn't indicate a \n
+        @push "\n"
+        @line++
+        @state = 0
+
+      else if @state is 1 # If previous line ended in replacement
+        return cb()
+
+      # Line is to be replaced
+      if (replaceLines = @lines[@line + 1])?
+        @state = 1
+        @push replaceLines
+      else
+        @push line
+    cb()
+
+
 
 something = (val) ->
   if not val?
@@ -110,6 +140,7 @@ module.exports = (server, fn) ->
   .post getEntity, Sleep.bodyParser(), (req) ->
     {entity} = req
     {action} = req.body
+    action = action.toLowerCase()
 
     if action is 'rename'
       to = @require req.body, 'to'
@@ -118,6 +149,16 @@ module.exports = (server, fn) ->
         @header 'Location', to
 
         location: to
+
+    else if action is 'edit'
+      lines = @require req.body, 'lines'
+      replacer = new LinesReplacer lines
+      entity.modify(replacer).then ->
+        lines: lines
+
+    else
+      throw new Error "HTTP:501 Don't know what you mean? #{action}?"
+
 
   # REMOVE
   .delete getEntity, (req) ->

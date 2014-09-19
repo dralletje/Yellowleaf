@@ -97,7 +97,7 @@ module.exports.Entity = class Entity
 module.exports.Directory = class Directory extends Entity
   list: ->
     fs.readdirAsync(@fullpath).map (entity) =>
-        @entity(entity)
+      @entity(entity)
 
   listDeep: ->
     @list().map (entity) ->

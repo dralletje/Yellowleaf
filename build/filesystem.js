@@ -1,5 +1,5 @@
 // YellowLeaf FTP by Michiel Dral 
-var Directory, Entity, File, Path, Promise, SimpleDrive, debug, fs, mkdirp, os, rimraf,
+var Directory, Entity, File, Path, Promise, SimpleDrive, debug, fs, mkdirp, os, rimraf, _,
   __slice = [].slice,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
@@ -15,6 +15,8 @@ os = require('os');
 rimraf = Promise.promisify(require('rimraf'));
 
 mkdirp = Promise.promisify(require('mkdirp'));
+
+_ = require('lodash');
 
 debug = require('debug')('[Drive]', 'red');
 
@@ -100,6 +102,7 @@ module.exports.Entity = Entity = (function() {
     this.drive = drive;
     this.stat = stat;
     this.paths = paths;
+    this.size = stat.size;
     this.relpath = paths.relpath, this.fullpath = paths.fullpath, this.name = paths.name;
   }
 
@@ -138,11 +141,26 @@ module.exports.Directory = Directory = (function(_super) {
   }
 
   Directory.prototype.list = function() {
-    return fs.readdirAsync(this.fullpath).then((function(_this) {
-      return function(entities) {
-        return Promise.all(entities.map(function(entity) {
-          return _this.entity(entity);
-        }));
+    return fs.readdirAsync(this.fullpath).map((function(_this) {
+      return function(entity) {
+        return _this.entity(entity);
+      };
+    })(this));
+  };
+
+  Directory.prototype.listDeep = function() {
+    return this.list().map(function(entity) {
+      var list;
+      if (!entity.isDirectory) {
+        return entity;
+      }
+      list = entity.listDeep();
+      list.push(entity);
+      return list;
+    }).then(_.flatten).map((function(_this) {
+      return function(entity) {
+        entity.relpath = entity.relpath.slice(_this.relpath.length);
+        return entity;
       };
     })(this));
   };

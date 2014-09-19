@@ -7,6 +7,7 @@ os = require 'os'
 
 rimraf = Promise.promisify require 'rimraf'
 mkdirp = Promise.promisify require 'mkdirp'
+_ = require 'lodash'
 
 debug = require('debug')('[Drive]', 'red')
 
@@ -75,6 +76,7 @@ module.exports.Entity = class Entity
     @stat = stat
     @paths = paths
 
+    {@size} = stat
     {@relpath, @fullpath, @name} = paths
     #@rights =
 
@@ -94,9 +96,24 @@ module.exports.Entity = class Entity
 
 module.exports.Directory = class Directory extends Entity
   list: ->
-    fs.readdirAsync(@fullpath).then (entities) =>
-      Promise.all entities.map (entity) =>
+    fs.readdirAsync(@fullpath).map (entity) =>
         @entity(entity)
+
+  listDeep: ->
+    @list().map (entity) ->
+      if not entity.isDirectory
+        return entity
+
+      # If the entity is a directory
+      # Get his listing and add the directory to it
+      list = entity.listDeep()
+      list.push(entity)
+      return list
+    .then(_.flatten)
+    .map (entity) =>
+      entity.relpath = entity.relpath.slice @relpath.length
+      entity
+
 
   entity: (path...) ->
     @drive.stat @relpath, path...

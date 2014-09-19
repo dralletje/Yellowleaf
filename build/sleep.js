@@ -3,7 +3,7 @@
 /*
 Rest server part!
  */
-var LinesReplacer, Promise, Sleep, Transform, request, something,
+var AssertEntity, LinesReplacer, MODIFIERS, Promise, Sleep, Transform, URL, request, something,
   __hasProp = {}.hasOwnProperty,
   __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -11,7 +11,11 @@ Sleep = require('sleeprest');
 
 Promise = require('bluebird');
 
+URL = require('url');
+
 request = require('request');
+
+AssertEntity = require('./lib/assert-entity');
 
 Transform = require('readable-stream').Transform;
 
@@ -58,8 +62,13 @@ something = function(val) {
   return val;
 };
 
+MODIFIERS = {
+  zip: require('./modifiers/zip').zip,
+  unzip: require('./modifiers/zip').unzip
+};
+
 module.exports = function(server, fn) {
-  var getEntity;
+  var getEntity, getModifiers, parseQuery;
   getEntity = function(req) {
     return req.drive.stat(req.params.path).then(function(stat) {
       return req.entity = stat;
@@ -67,48 +76,74 @@ module.exports = function(server, fn) {
       throw new Error("HTTP:404 File not found.");
     });
   };
+  parseQuery = function(req) {
+    return req.query = URL.parse(req._url, true).query;
+  };
+  getModifiers = function(req) {
+    if (req.query.modifier == null) {
+      req.modifiers = [];
+      return;
+    }
+    return req.modifiers = req.query.modifier.split(',').map(function(mod) {
+      return mod.trim();
+    }).map(function(name) {
+      var mod;
+      mod = MODIFIERS[name];
+      if (mod == null) {
+        throw new Error('HTTP:501 Unknown modifier!');
+      }
+      return mod;
+    });
+  };
   return server.res(/(.*)/, 'path').use(function(req) {
     return Promise["try"](fn, [req]).then(function(result) {
       return req.drive = result;
     });
-  }).get(getEntity, function(req) {
-    var dir, entity;
-    entity = req.entity;
-    this.header('x-type', entity.isDirectory ? 'directory' : 'file');
-    if (entity.isDirectory) {
-      dir = entity.info();
-      return entity.list().then((function(_this) {
-        return function(list) {
-          var thisHref;
-          dir.files = list.map(function(file) {
-            return file.name;
+  }).use(parseQuery).get(getEntity, getModifiers, function(req) {
+    var entity, modifiers;
+    entity = req.entity, modifiers = req.modifiers;
+    return Promise.reduce(modifiers, function(entity, modifier) {
+      var assertEntity;
+      assertEntity = new AssertEntity(entity);
+      return modifier(entity, assertEntity);
+    }, entity).then((function(_this) {
+      return function(entity) {
+        var dir;
+        _this.header('x-type', entity.isDirectory ? 'directory' : 'file');
+        if (entity.isDirectory) {
+          dir = entity.info();
+          return entity.list().then(function(list) {
+            var thisHref;
+            dir.files = list.map(function(file) {
+              return file.name;
+            });
+            thisHref = _this._links.self.href;
+            _this.embed('files', list.map(function(file) {
+              var info;
+              info = file.info();
+              info._link = {
+                self: {
+                  href: thisHref + '/' + file.name
+                },
+                parent: {
+                  href: thisHref
+                }
+              };
+              return info;
+            }));
+            return dir;
           });
-          thisHref = _this._links.self.href;
-          _this.embed('files', list.map(function(file) {
-            var info;
-            info = file.info();
-            info._link = {
-              self: {
-                href: thisHref + '/' + file.name
-              },
-              parent: {
-                href: thisHref
-              }
+          return entity.list().then(function(list) {
+            return {
+              type: 'directory',
+              files: list
             };
-            return info;
-          }));
-          return dir;
-        };
-      })(this));
-      return entity.list().then(function(list) {
-        return {
-          type: 'directory',
-          files: list
-        };
-      });
-    } else {
-      return entity.read();
-    }
+          });
+        } else {
+          return entity.read();
+        }
+      };
+    })(this));
   }).put(Sleep.bodyParser(), function(req) {
     var destination, path, source, sources;
     path = req.params.path;

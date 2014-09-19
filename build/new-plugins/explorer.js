@@ -44,7 +44,11 @@ explorer = function(ftp, drive) {
   });
   ftp.on('command.list', function(folder) {
     return Promise.all([
-      drive.stat(folder).then(function(directory) {
+      drive.stat(folder)["catch"](function(err) {
+        return drive.createDir(folder).then(function() {
+          return drive.stat(folder);
+        });
+      }).then(function(directory) {
         return directory.list();
       }), this.dataServer.getConnection()
     ]).spread(function(results, connection) {
@@ -54,7 +58,7 @@ explorer = function(ftp, drive) {
           line = entity.isDirectory ? 'd' : '-';
           line += 'rwxrwxrwx';
           line += " 1 ftp ftp ";
-          line += entity.stat.size.toString();
+          line += entity.size.toString();
           line += new Date(entity.stat.mtime).format(' M d H:i ');
           line += (function() {
             var name;

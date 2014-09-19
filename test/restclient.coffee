@@ -63,6 +63,10 @@ module.exports.Request = class Request
     else
       promise
 
+
+
+
+
   write: (data) ->
     if @hasSend
       throw new Error 'Already ended!'

@@ -164,6 +164,51 @@ describe 'REST:', ->
     it 'should clean up the file', ->
       @client.delete(@file).then(statuscode 200)
 
+  unzip = require 'unzip'
+  describe 'Zip', ->
+    it 'should create two files in a folder', ->
+      @folder = '/' + randomstring()
+
+      @name = @folder + '/' + randomstring() + '.txt'
+      @content = randomstring 512
+
+      @name2 = @folder + '/' + randomstring() + '.txt'
+      @content2 = randomstring 512
+
+      @client.put(@name).send(@content)
+      .then(statuscode 201).then =>
+        @client.put(@name2).send(@content2)
+      .then(statuscode 201)
+
+    it 'should generate a zip of the directory', ->
+      @client.get(@folder + '?modifier=zip').getResponse()
+      .then(statuscode 200)
+      .then (res) ->
+        res.pipe(unzip.Parse())
+        .on 'entry', (entry) ->
+          fileName = entry.path
+          type = entry.type # 'Directory' or 'File'
+          size = entry.size
+
+          console.log fileName, type, size
+
+          if fileName is "this IS the file I'm looking for"
+            entry.autodrain()
+          else
+            entry.autodrain()
+
+      #.then (res) ->
+      #  fs = require 'fs'
+      #  res.pipe fs.createWriteStream './test.zip'
+
+    it 'should clean up the directory', ->
+      @client.delete(@folder).then(statuscode 200).then =>
+        @client.get(@folder)
+      .then(statuscode 404)
+
+    # fs.createReadStream('path/to/archive.zip').pipe(unzip.Extract({ path: 'output/path' }));
+
+
   describe 'Errors', ->
     it 'should not write a file to a directory', ->
       @client.put('/').send(randomstring 512)

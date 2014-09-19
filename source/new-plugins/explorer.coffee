@@ -46,7 +46,10 @@ explorer = (ftp, drive) ->
 
   ftp.on 'command.list', (folder) ->
     Promise.all([
-      drive.stat(folder).then (directory) ->
+      drive.stat(folder).catch (err) ->
+        drive.createDir(folder).then ->
+          drive.stat(folder)
+      .then (directory) ->
         directory.list()
     ,
       @dataServer.getConnection()
@@ -57,7 +60,8 @@ explorer = (ftp, drive) ->
           line = if entity.isDirectory then 'd' else '-'
           line += 'rwxrwxrwx'
           line += " 1 ftp ftp "
-          line += entity.stat.size.toString()
+          line += entity.size.toString()
+          # if mtime is undefined it will use the current time (good!)
           line += new Date(entity.stat.mtime).format(' M d H:i ')
           line += do () ->
             name = entity.name.split('/')

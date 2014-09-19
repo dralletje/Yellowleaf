@@ -4,12 +4,14 @@ Rest server part!
 
 Sleep = require 'sleeprest'
 Promise = require 'bluebird'
+URL = require 'url'
 
 # For PUT types
 request = require 'request'
 
 # For POST modifiers
-{Transform,} = require 'readable-stream'
+AssertEntity = require './lib/assert-entity'
+{Transform} = require 'readable-stream'
 class LinesReplacer extends Transform
   constructor: (lines) ->
     super
@@ -37,11 +39,16 @@ class LinesReplacer extends Transform
     cb()
 
 
-
 something = (val) ->
   if not val?
     throw new error "HTTP:422 Need something!!!!"
   val
+
+
+# Modifiers
+MODIFIERS =
+  zip: require('./modifiers/zip').zip
+  unzip: require('./modifiers/zip').unzip
 
 
 module.exports = (server, fn) ->
@@ -52,39 +59,67 @@ module.exports = (server, fn) ->
     .catch (err) ->
       throw new Error "HTTP:404 File not found."
 
+  parseQuery = (req) ->
+    # Use the original url for now -> _url
+    req.query = URL.parse(req._url, true).query
+
+  # Get the modifiers to apply to the file
+  getModifiers = (req) ->
+    if not req.query.modifier?
+      req.modifiers = []
+      return
+
+    req.modifiers = req.query.modifier.split(',').map (mod) ->
+      mod.trim()
+    .map (name) ->
+      mod = MODIFIERS[name]
+      if not mod?
+        throw new Error 'HTTP:501 Unknown modifier!'
+      return mod
+
+
   server.res(/(.*)/, 'path').use (req) ->
     # Use the callback fn to get the drive
     Promise.try(fn, [req]).then (result) ->
       req.drive = result
 
+  .use(parseQuery)
+
   # READ
-  .get getEntity, (req) ->
-    {entity} = req
-    @header 'x-type', if entity.isDirectory then 'directory' else 'file'
+  .get getEntity, getModifiers, (req) ->
+    {entity, modifiers} = req
 
-    if entity.isDirectory
-      dir = entity.info()
-      return entity.list().then (list) =>
-        # Just the files
-        dir.files = list.map (file) ->
-          file.name
+    # Apply modifiers to the entity, to get a new one
+    Promise.reduce(modifiers, (entity, modifier) ->
+      assertEntity = new AssertEntity entity
+      modifier(entity, assertEntity)
 
-        # Add embedded files
-        thisHref = @_links.self.href
-        @embed 'files', list.map (file) =>
-          info = file.info()
-          info._link =
-            self: href: thisHref + '/' + file.name
-            parent: href: thisHref
-          info
+    , entity).then (entity) =>
+      @header 'x-type', if entity.isDirectory then 'directory' else 'file'
 
-        dir
+      if entity.isDirectory
+        dir = entity.info()
+        return entity.list().then (list) =>
+          # Just the files
+          dir.files = list.map (file) ->
+            file.name
 
-      entity.list().then (list) ->
-        type: 'directory'
-        files: list
-    else
-      entity.read()
+          # Add embedded files
+          thisHref = @_links.self.href
+          @embed 'files', list.map (file) =>
+            info = file.info()
+            info._link =
+              self: href: thisHref + '/' + file.name
+              parent: href: thisHref
+            info
+
+          dir
+
+        entity.list().then (list) ->
+          type: 'directory'
+          files: list
+      else
+        entity.read()
 
 
   # WRITE

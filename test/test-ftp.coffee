@@ -3,9 +3,7 @@ should = chai.should()
 expect = chai.expect
 chai.use require 'chai-as-promised'
 
-#debug = require('debug')('[TC]', 'yellow')
-debug = ->
-
+debug = require('debug')('test:ftp')
 
 # SETUP
 ftp = require '../build/ftp'

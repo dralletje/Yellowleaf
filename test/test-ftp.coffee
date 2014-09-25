@@ -15,7 +15,6 @@ server = ftp (user, password) ->
     new Drive process.cwd() + "/test/example/ftp"
 
 .listen(ftpport)
-.debug(no)
 
 console.log 'FTP listening on', ftpport
 

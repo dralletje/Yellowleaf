@@ -14,7 +14,6 @@ filesystemPlugins = [
 basePlugins = [
   Ftpd.defaults.nonFileCommands
   Ftpd.defaults.dataSocket
-  Ftpd.defaults.unknownCommand
 ]
 
 ## Polyfills
@@ -30,6 +29,9 @@ basePlugins = [
 module.exports = (auth) ->
   new Ftpd (client) ->
     client.user = undefined
+
+    # Directly add unknowncommand plugin
+    Ftpd.defaults.unknownCommand(client)
 
     ###
     Authentication

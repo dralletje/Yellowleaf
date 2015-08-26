@@ -49,7 +49,7 @@ console.log """
 
 # THE TESTS
 before ->
-  @client = new Client 'http://localhost:'+port
+  @client = new Client('http://localhost:'+port)
 
 describe 'REST:', ->
   describe 'Root', ->
@@ -179,22 +179,22 @@ describe 'REST:', ->
         @client.put(@name2).send(@content2)
       .then(statuscode 201)
 
-    it 'should generate a zip of the directory', ->
-      @client.get(@folder + '?modifier=zip').getResponse()
-      .then(statuscode 200)
-      .then (res) ->
-        res.pipe(unzip.Parse())
-        .on 'entry', (entry) ->
-          fileName = entry.path
-          type = entry.type # 'Directory' or 'File'
-          size = entry.size
-
-          console.log fileName, type, size
-
-          if fileName is "this IS the file I'm looking for"
-            entry.autodrain()
-          else
-            entry.autodrain()
+    # it 'should generate a zip of the directory', ->
+    #   @client.get(@folder + '?modifier=zip').getResponse()
+    #   .then(statuscode 200)
+    #   .then (res) ->
+    #     res.pipe(unzip.Parse())
+    #     .on 'entry', (entry) ->
+    #       fileName = entry.path
+    #       type = entry.type # 'Directory' or 'File'
+    #       size = entry.size
+    #
+    #       console.log fileName, type, size
+    #
+    #       if fileName is "this IS the file I'm looking for"
+    #         entry.autodrain()
+    #       else
+    #         entry.autodrain()
 
       #.then (res) ->
       #  fs = require 'fs'

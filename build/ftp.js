@@ -12,11 +12,12 @@ Promise = require('bluebird');
 
 filesystemPlugins = [require('./new-plugins/explorer'), require('./new-plugins/modify'), require('./new-plugins/download')];
 
-basePlugins = [Ftpd.defaults.nonFileCommands, Ftpd.defaults.dataSocket, Ftpd.defaults.unknownCommand];
+basePlugins = [Ftpd.defaults.nonFileCommands, Ftpd.defaults.dataSocket];
 
 module.exports = function(auth) {
   return new Ftpd(function(client) {
     client.user = void 0;
+    Ftpd.defaults.unknownCommand(client);
 
     /*
     Authentication

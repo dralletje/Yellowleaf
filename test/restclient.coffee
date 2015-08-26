@@ -3,17 +3,18 @@ urlparse = require('url').parse
 path = require 'path'
 
 Promise = require 'bluebird'
+Object.assign = require 'object-assign'
 
 module.exports = class RestClient
   constructor: (base) ->
     @base = urlparse base
 
   request: (method, url, headers) ->
-    uri = Object.create @base
-    uri.path = path.join uri.pathname, url
-    uri.headers = headers or {}
-
-    uri.method = method
+    uri = Object.assign({}, @base,
+      path: path.join @base.pathname, url
+      headers: headers or {}
+      method: method
+    )
 
     new Request uri
 
